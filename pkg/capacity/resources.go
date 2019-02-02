@@ -22,6 +22,16 @@ import (
 	resourcehelper "k8s.io/kubernetes/pkg/kubectl/util/resource"
 )
 
+type clusterResource struct {
+	cpuAllocatable resource.Quantity
+	cpuRequest     resource.Quantity
+	cpuLimit       resource.Quantity
+	memAllocatable resource.Quantity
+	memRequest     resource.Quantity
+	memLimit       resource.Quantity
+	capacityByNode map[string]*nodeResource
+}
+
 type nodeResource struct {
 	cpuAllocatable resource.Quantity
 	cpuRequest     resource.Quantity
@@ -59,18 +69,67 @@ func (nr *nodeResource) addPodResources(pod *corev1.Pod) {
 	nr.memLimit.Add(limit["memory"])
 }
 
+func (cr *clusterResource) addNodeCapacity(nr *nodeResource) {
+	cr.cpuAllocatable.Add(nr.cpuAllocatable)
+	cr.cpuRequest.Add(nr.cpuRequest)
+	cr.cpuLimit.Add(nr.cpuLimit)
+	cr.memAllocatable.Add(nr.memAllocatable)
+	cr.memRequest.Add(nr.memRequest)
+	cr.memLimit.Add(nr.memLimit)
+}
+
+func (cr *clusterResource) cpuRequestString() string {
+	return resourceString(cr.cpuRequest, cr.cpuAllocatable)
+}
+
+func (cr *clusterResource) cpuLimitString() string {
+	return resourceString(cr.cpuLimit, cr.cpuAllocatable)
+}
+
+func (cr *clusterResource) memRequestString() string {
+	return resourceString(cr.memRequest, cr.memAllocatable)
+}
+
+func (cr *clusterResource) memLimitString() string {
+	return resourceString(cr.memLimit, cr.memAllocatable)
+}
+
 func (nr *nodeResource) cpuRequestString() string {
-	return fmt.Sprintf("%s / %s", nr.cpuRequest.String(), nr.cpuAllocatable.String())
+	return resourceString(nr.cpuRequest, nr.cpuAllocatable)
 }
 
 func (nr *nodeResource) cpuLimitString() string {
-	return fmt.Sprintf("%s / %s", nr.cpuLimit.String(), nr.cpuAllocatable.String())
+	return resourceString(nr.cpuLimit, nr.cpuAllocatable)
 }
 
 func (nr *nodeResource) memRequestString() string {
-	return fmt.Sprintf("%s / %s", nr.memRequest.String(), nr.memAllocatable.String())
+	return resourceString(nr.memRequest, nr.memAllocatable)
 }
 
 func (nr *nodeResource) memLimitString() string {
-	return fmt.Sprintf("%s / %s", nr.memLimit.String(), nr.memAllocatable.String())
+	return resourceString(nr.memLimit, nr.memAllocatable)
+}
+
+func (pr *podResource) cpuRequestString(nr *nodeResource) string {
+	return resourceString(pr.cpuRequest, nr.cpuAllocatable)
+}
+
+func (pr *podResource) cpuLimitString(nr *nodeResource) string {
+	return resourceString(pr.cpuLimit, nr.cpuAllocatable)
+}
+
+func (pr *podResource) memRequestString(nr *nodeResource) string {
+	return resourceString(pr.memRequest, nr.memAllocatable)
+}
+
+func (pr *podResource) memLimitString(nr *nodeResource) string {
+	return resourceString(pr.memLimit, nr.memAllocatable)
+}
+
+func resourceString(actual, allocatable resource.Quantity) string {
+	utilPercent := float64(0)
+	if allocatable.MilliValue() > 0 {
+		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
+	}
+	return fmt.Sprintf("%s (%d%%)", actual.String(), int64(utilPercent))
 }
