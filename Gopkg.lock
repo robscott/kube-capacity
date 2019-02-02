@@ -429,6 +429,22 @@
   version = "v1.13.3"
 
 [[projects]]
+  branch = "master"
+  digest = "1:6582b0b7317c68c2cb4c49d48c1c4ee8d9d4cc8bca0a6ed7646f5530e44e2e24"
+  name = "k8s.io/metrics"
+  packages = [
+    "pkg/apis/metrics",
+    "pkg/apis/metrics/v1alpha1",
+    "pkg/apis/metrics/v1beta1",
+    "pkg/client/clientset/versioned",
+    "pkg/client/clientset/versioned/scheme",
+    "pkg/client/clientset/versioned/typed/metrics/v1alpha1",
+    "pkg/client/clientset/versioned/typed/metrics/v1beta1",
+  ]
+  pruneopts = ""
+  revision = "f7a20fa991c5a47659caf07e858a5a6f5d258123"
+
+[[projects]]
   digest = "1:321081b4a44256715f2b68411d8eda9a17f17ebfe6f0cc61d2cc52d11c08acfa"
   name = "sigs.k8s.io/yaml"
   packages = ["."]
@@ -450,6 +466,7 @@
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/kubernetes/pkg/kubectl/util/resource",
+    "k8s.io/metrics/pkg/client/clientset/versioned",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
