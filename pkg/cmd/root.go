@@ -22,7 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var output string
+var showPods bool
+var showUtil bool
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -34,12 +35,13 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Error parsing flags: %v", err)
 		}
 
-		capacity.List(args, output)
+		capacity.List(args, showPods, showUtil)
 	},
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "", "output format (normal,wide)")
+	rootCmd.PersistentFlags().BoolVarP(&showPods, "pods", "p", false, "Set this flag to include pods in output")
+	rootCmd.PersistentFlags().BoolVarP(&showUtil, "util", "u", false, "Set this flag to include resource utilization in output")
 }
 
 // Execute is the primary entrypoint for this CLI
