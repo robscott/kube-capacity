@@ -15,17 +15,13 @@
 package capacity
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
 	"text/tabwriter"
-	"time"
 
 	"github.com/robscott/kube-capacity/pkg/kube"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 func List(args []string, outputFormat string) {
@@ -53,35 +49,31 @@ func List(args []string, outputFormat string) {
 		panic(err.Error())
 	}
 
-	cr := clusterResource{
-		cpuAllocatable: resource.Quantity{},
-		cpuRequest:     resource.Quantity{},
-		cpuLimit:       resource.Quantity{},
-		memAllocatable: resource.Quantity{},
-		memRequest:     resource.Quantity{},
-		memLimit:       resource.Quantity{},
-		capacityByNode: map[string]*nodeResource{},
+	cm := clusterMetric{
+		cpu:         &resourceMetric{},
+		memory:      &resourceMetric{},
+		nodeMetrics: map[string]*nodeMetric{},
+		podMetrics:  map[string]*podMetric{},
 	}
 
 	for _, node := range nodeList.Items {
-		cr.capacityByNode[node.Name] = &nodeResource{
-			cpuAllocatable: node.Status.Allocatable["cpu"],
-			cpuRequest:     resource.Quantity{},
-			cpuLimit:       resource.Quantity{},
-			memAllocatable: node.Status.Allocatable["memory"],
-			memRequest:     resource.Quantity{},
-			memLimit:       resource.Quantity{},
-			podResources:   []podResource{},
+		cm.nodeMetrics[node.Name] = &nodeMetric{
+			cpu: &resourceMetric{
+				allocatable: node.Status.Allocatable["cpu"],
+			},
+			memory: &resourceMetric{
+				allocatable: node.Status.Allocatable["memory"],
+			},
+			podMetrics: map[string]*podMetric{},
 		}
+	}
 
-		for _, pod := range podList.Items {
-			n, ok := cr.capacityByNode[pod.Spec.NodeName]
-			if ok {
-				n.addPodResources(&pod)
-			}
-		}
+	for _, pod := range podList.Items {
+		cm.addPodMetric(&pod)
+	}
 
-		cr.addNodeCapacity(cr.capacityByNode[node.Name])
+	for _, node := range nodeList.Items {
+		cm.addNodeMetric(cm.nodeMetrics[node.Name])
 	}
 
 	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
@@ -90,10 +82,12 @@ func List(args []string, outputFormat string) {
 		panic(err.Error())
 	}
 
-	fmt.Printf("========> %#v\n", nmList)
-
-	for _, nm := range nmList.Items {
-		fmt.Printf("nm =============> %#v\n", nm)
+	for _, node := range nmList.Items {
+		nm := cm.nodeMetrics[node.GetName()]
+		cm.cpu.utilization.Add(node.Usage["cpu"])
+		cm.memory.utilization.Add(node.Usage["memory"])
+		nm.cpu.utilization = node.Usage["cpu"]
+		nm.memory.utilization = node.Usage["memory"]
 	}
 
 	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
@@ -102,20 +96,22 @@ func List(args []string, outputFormat string) {
 		panic(err.Error())
 	}
 
-	fmt.Printf("pmList ========> %#v\n", pmList)
-
-	for _, pm := range pmList.Items {
-		fmt.Printf("nm =============> %#v\n", pm)
+	for _, pod := range pmList.Items {
+		pm := cm.podMetrics[fmt.Sprintf("%s-%s", pod.GetNamespace(), pod.GetName())]
+		for _, container := range pod.Containers {
+			pm.cpu.utilization.Add(container.Usage["cpu"])
+			pm.memory.utilization.Add(container.Usage["memory"])
+		}
 	}
 
-	printList(cr, outputFormat)
+	printList(cm, outputFormat)
 }
 
-func printList(cr clusterResource, outputFormat string) {
-	names := make([]string, len(cr.capacityByNode))
+func printList(cm clusterMetric, outputFormat string) {
+	names := make([]string, len(cm.nodeMetrics))
 
 	i := 0
-	for name := range cr.capacityByNode {
+	for name := range cm.nodeMetrics {
 		names[i] = name
 		i++
 	}
@@ -125,80 +121,45 @@ func printList(cr clusterResource, outputFormat string) {
 	w.Init(os.Stdout, 0, 8, 2, ' ', 0)
 
 	if outputFormat == "wide" {
-		fmt.Fprintln(w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
+		fmt.Fprintln(w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
 
 		if len(names) > 1 {
-			fmt.Fprintf(w, "* \t *\t *\t %s \t %s \t %s \t %s \n",
-				cr.cpuRequestString(), cr.cpuLimitString(),
-				cr.memRequestString(), cr.memLimitString())
+			fmt.Fprintf(w, "* \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
+				cm.cpu.requestString(), cm.cpu.limitString(), cm.cpu.utilString(),
+				cm.memory.requestString(), cm.memory.limitString(), cm.memory.utilString())
+			fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
 		}
 	} else {
 		fmt.Fprintln(w, "NODE\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
 
 		if len(names) > 1 {
 			fmt.Fprintf(w, "* \t %s \t %s \t %s \t %s \n",
-				cr.cpuRequestString(), cr.cpuLimitString(),
-				cr.memRequestString(), cr.memLimitString())
+				cm.cpu.requestString(), cm.cpu.limitString(),
+				cm.memory.requestString(), cm.memory.limitString())
 		}
 	}
 
 	for _, name := range names {
-		cap := cr.capacityByNode[name]
+		nm := cm.nodeMetrics[name]
 
 		if outputFormat == "wide" {
-			fmt.Fprintf(w, "%s \t *\t *\t %s \t %s \t %s \t %s \n", name,
-				cap.cpuRequestString(), cap.cpuLimitString(),
-				cap.memRequestString(), cap.memLimitString())
+			fmt.Fprintf(w, "%s \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n", name,
+				nm.cpu.requestString(), nm.cpu.limitString(), nm.cpu.utilString(),
+				nm.memory.requestString(), nm.memory.limitString(), nm.memory.utilString())
 
-			for _, pod := range cap.podResources {
-				fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \n", name,
-					pod.namespace, pod.name,
-					pod.cpuRequestString(cap), pod.cpuLimitString(cap),
-					pod.memRequestString(cap), pod.memLimitString(cap))
+			for _, pm := range nm.podMetrics {
+				fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n", name,
+					pm.namespace, pm.name,
+					pm.cpu.requestStringPar(nm.cpu), pm.cpu.limitStringPar(nm.cpu), pm.cpu.utilStringPar(nm.cpu),
+					pm.memory.requestStringPar(nm.memory), pm.memory.limitStringPar(nm.memory), pm.memory.utilStringPar(nm.memory))
 			}
-			fmt.Fprintln(w)
+			fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
 		} else {
 			fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \n", name,
-				cap.cpuRequestString(), cap.cpuLimitString(),
-				cap.memRequestString(), cap.memLimitString())
+				nm.cpu.requestString(), nm.cpu.limitString(),
+				nm.memory.requestString(), nm.memory.limitString())
 		}
 	}
 
 	w.Flush()
-}
-
-// PodMetricsList : PodMetricsList
-type PodMetricsList struct {
-	Kind       string `json:"kind"`
-	APIVersion string `json:"apiVersion"`
-	Metadata   struct {
-		SelfLink string `json:"selfLink"`
-	} `json:"metadata"`
-	Items []struct {
-		Metadata struct {
-			Name              string    `json:"name"`
-			Namespace         string    `json:"namespace"`
-			SelfLink          string    `json:"selfLink"`
-			CreationTimestamp time.Time `json:"creationTimestamp"`
-		} `json:"metadata"`
-		Timestamp  time.Time `json:"timestamp"`
-		Window     string    `json:"window"`
-		Containers []struct {
-			Name  string `json:"name"`
-			Usage struct {
-				CPU    string `json:"cpu"`
-				Memory string `json:"memory"`
-			} `json:"usage"`
-		} `json:"containers"`
-	} `json:"items"`
-}
-
-func getMetrics(clientset *kubernetes.Clientset) (*PodMetricsList, error) {
-	data, err := clientset.RESTClient().Get().AbsPath("apis/metrics.k8s.io/v1beta1/pods").DoRaw()
-	if err != nil {
-		return nil, err
-	}
-	pods := &PodMetricsList{}
-	err = json.Unmarshal(data, pods)
-	return pods, err
 }
