@@ -51,10 +51,10 @@ func printHeaders(w *tabwriter.Writer, cm *clusterMetric, showPods bool, showUti
 			fmt.Fprintf(w, "* \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
 				cm.cpu.requestString(),
 				cm.cpu.limitString(),
-				cm.cpu.utilString(),
+				cm.cpu.utilStringMilli(),
 				cm.memory.requestString(),
 				cm.memory.limitString(),
-				cm.memory.utilString())
+				cm.memory.utilStringMebi())
 
 			fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
 		}
@@ -75,10 +75,10 @@ func printHeaders(w *tabwriter.Writer, cm *clusterMetric, showPods bool, showUti
 		fmt.Fprintf(w, "* \t %s \t %s \t %s \t %s \t %s \t %s \n",
 			cm.cpu.requestString(),
 			cm.cpu.limitString(),
-			cm.cpu.utilString(),
+			cm.cpu.utilStringMilli(),
 			cm.memory.requestString(),
 			cm.memory.limitString(),
-			cm.memory.utilString())
+			cm.memory.utilStringMebi())
 
 	} else {
 		fmt.Fprintln(w, "NODE\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
@@ -97,10 +97,10 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 			name,
 			nm.cpu.requestString(),
 			nm.cpu.limitString(),
-			nm.cpu.utilString(),
+			nm.cpu.utilStringMilli(),
 			nm.memory.requestString(),
 			nm.memory.limitString(),
-			nm.memory.utilString())
+			nm.memory.utilStringMebi())
 
 		for _, pm := range nm.podMetrics {
 			fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n",
@@ -109,10 +109,10 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 				pm.name,
 				pm.cpu.requestStringPar(nm.cpu),
 				pm.cpu.limitStringPar(nm.cpu),
-				pm.cpu.utilStringPar(nm.cpu),
+				pm.cpu.utilStringParMilli(nm.cpu),
 				pm.memory.requestStringPar(nm.memory),
 				pm.memory.limitStringPar(nm.memory),
-				pm.memory.utilStringPar(nm.memory))
+				pm.memory.utilStringParMebi(nm.memory))
 		}
 
 		fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
@@ -143,10 +143,10 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 			name,
 			nm.cpu.requestString(),
 			nm.cpu.limitString(),
-			nm.cpu.utilString(),
+			nm.cpu.utilStringMilli(),
 			nm.memory.requestString(),
 			nm.memory.limitString(),
-			nm.memory.utilString())
+			nm.memory.utilStringMebi())
 
 	} else {
 		fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \n", name,
