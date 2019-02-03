@@ -24,10 +24,13 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 
+	// Required for GKE
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	// Required for OIDC
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
+// NewClientSet returns a new Kubernetes clientset
 func NewClientSet() (*kubernetes.Clientset, error) {
 	config, err := getKubeConfig()
 	if err != nil {
@@ -37,6 +40,7 @@ func NewClientSet() (*kubernetes.Clientset, error) {
 	return kubernetes.NewForConfig(config)
 }
 
+// NewMetricsClientSet returns a new clientset for Kubernetes metrics
 func NewMetricsClientSet() (*metrics.Clientset, error) {
 	config, err := getKubeConfig()
 	if err != nil {

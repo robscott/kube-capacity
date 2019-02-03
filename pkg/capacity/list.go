@@ -18,19 +18,23 @@ import (
 	"fmt"
 
 	"github.com/robscott/kube-capacity/pkg/kube"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+// List gathers cluster resource data and outputs it
 func List(args []string, showPods bool, showUtil bool) {
+	podList, nodeList := getPodsAndNodes()
+	pmList, nmList := getMetrics()
+	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
+	printList(&cm, showPods, showUtil)
+}
+
+func getPodsAndNodes() (*corev1.PodList, *corev1.NodeList) {
 	clientset, err := kube.NewClientSet()
 	if err != nil {
 		fmt.Println("Error connecting to Kubernetes")
-		panic(err.Error())
-	}
-
-	mClientset, err := kube.NewMetricsClientSet()
-	if err != nil {
-		fmt.Println("Error connecting to Metrics Server")
 		panic(err.Error())
 	}
 
@@ -46,6 +50,32 @@ func List(args []string, showPods bool, showUtil bool) {
 		panic(err.Error())
 	}
 
+	return podList, nodeList
+}
+
+func getMetrics() (*v1beta1.PodMetricsList, *v1beta1.NodeMetricsList) {
+	mClientset, err := kube.NewMetricsClientSet()
+	if err != nil {
+		fmt.Println("Error connecting to Metrics Server")
+		panic(err.Error())
+	}
+
+	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+	if err != nil {
+		fmt.Println("Error getting metrics")
+		panic(err.Error())
+	}
+
+	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
+	if err != nil {
+		fmt.Println("Error getting metrics")
+		panic(err.Error())
+	}
+
+	return pmList, nmList
+}
+
+func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList, nodeList *corev1.NodeList, nmList *v1beta1.NodeMetricsList) clusterMetric {
 	cm := clusterMetric{
 		cpu:         &resourceMetric{},
 		memory:      &resourceMetric{},
@@ -73,24 +103,12 @@ func List(args []string, showPods bool, showUtil bool) {
 		cm.addNodeMetric(cm.nodeMetrics[node.Name])
 	}
 
-	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
-	if err != nil {
-		fmt.Println("Error getting metrics")
-		panic(err.Error())
-	}
-
 	for _, node := range nmList.Items {
 		nm := cm.nodeMetrics[node.GetName()]
 		cm.cpu.utilization.Add(node.Usage["cpu"])
 		cm.memory.utilization.Add(node.Usage["memory"])
 		nm.cpu.utilization = node.Usage["cpu"]
 		nm.memory.utilization = node.Usage["memory"]
-	}
-
-	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
-	if err != nil {
-		fmt.Println("Error getting metrics")
-		panic(err.Error())
 	}
 
 	for _, pod := range pmList.Items {
@@ -101,5 +119,5 @@ func List(args []string, showPods bool, showUtil bool) {
 		}
 	}
 
-	printList(&cm, showPods, showUtil)
+	return cm
 }

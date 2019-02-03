@@ -27,8 +27,8 @@ var showUtil bool
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
-	Short: "kube-capacity provides an overview of the resource utilization in a Kubernetes cluster",
-	Long:  "kube-capacity provides an overview of resources available for each node in a Kubernetes cluster",
+	Short: "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster",
+	Long:  "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster",
 	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.ParseFlags(args); err != nil {
