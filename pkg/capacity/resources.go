@@ -110,9 +110,9 @@ func resourceString(actual, allocatable resource.Quantity, resourceType string) 
 	if allocatable.MilliValue() > 0 {
 		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
 	}
+
 	if resourceType == "cpu" {
 		return fmt.Sprintf("%dm (%d%%)", actual.MilliValue(), int64(utilPercent))
-	} else {
-		return fmt.Sprintf("%dMi (%d%%)", actual.Value()/1048576, int64(utilPercent))
 	}
+	return fmt.Sprintf("%dMi (%d%%)", actual.Value()/1048576, int64(utilPercent))
 }
