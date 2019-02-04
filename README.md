@@ -1,6 +1,6 @@
 # kube-capacity
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/robscott/kube-capacity)](https://goreportcard.com/report/github.com/robscott/kube-capacity)
+[![Go Report Card](https://goreportcard.com/badge/github.com/robscott/kube-capacity)](https://goreportcard.com/report/github.com/robscott/kube-capacity) [![CircleCI](https://circleci.com/gh/robscott/kube-capacity.svg?style=svg)](https://circleci.com/gh/robscott/kube-capacity)
 
 This is a simple CLI that provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster. It attempts to combine the best parts of the output from `kubectl top` and `kubectl describe` into an easy to use CLI focused on cluster resources.
 

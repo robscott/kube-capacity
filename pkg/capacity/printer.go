@@ -107,12 +107,12 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 				name,
 				pm.namespace,
 				pm.name,
-				pm.cpu.requestStringPar(nm.cpu),
-				pm.cpu.limitStringPar(nm.cpu),
-				pm.cpu.utilStringParMilli(nm.cpu),
-				pm.memory.requestStringPar(nm.memory),
-				pm.memory.limitStringPar(nm.memory),
-				pm.memory.utilStringParMebi(nm.memory))
+				pm.cpu.requestString(),
+				pm.cpu.limitString(),
+				pm.cpu.utilStringMilli(),
+				pm.memory.requestString(),
+				pm.memory.limitString(),
+				pm.memory.utilStringMebi())
 		}
 
 		fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
@@ -130,10 +130,10 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 				name,
 				pm.namespace,
 				pm.name,
-				pm.cpu.requestStringPar(nm.cpu),
-				pm.cpu.limitStringPar(nm.cpu),
-				pm.memory.requestStringPar(nm.memory),
-				pm.memory.limitStringPar(nm.memory))
+				pm.cpu.requestString(),
+				pm.cpu.limitString(),
+				pm.memory.requestString(),
+				pm.memory.limitString())
 		}
 
 		fmt.Fprintln(w, "\t\t\t\t\t\t")

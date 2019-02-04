@@ -75,6 +75,8 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod) {
 
 	nm := cm.nodeMetrics[pod.Spec.NodeName]
 	if nm != nil {
+		cm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
+		cm.podMetrics[key].memory.allocatable = nm.memory.allocatable
 		nm.podMetrics[key] = cm.podMetrics[key]
 		nm.cpu.request.Add(req["cpu"])
 		nm.cpu.limit.Add(limit["cpu"])
@@ -108,30 +110,6 @@ func (rm *resourceMetric) utilStringMebi() string {
 	utilPercent := float64(0)
 	if rm.allocatable.MilliValue() > 0 {
 		utilPercent = float64(rm.utilization.MilliValue()) / float64(rm.allocatable.MilliValue()) * 100
-	}
-	return fmt.Sprintf("%dMi (%d%%)", rm.utilization.Value()/1048576, int64(utilPercent))
-}
-
-func (rm *resourceMetric) requestStringPar(pm *resourceMetric) string {
-	return resourceString(rm.request, pm.allocatable)
-}
-
-func (rm *resourceMetric) limitStringPar(pm *resourceMetric) string {
-	return resourceString(rm.limit, pm.allocatable)
-}
-
-func (rm *resourceMetric) utilStringParMilli(pm *resourceMetric) string {
-	utilPercent := float64(0)
-	if pm.allocatable.MilliValue() > 0 {
-		utilPercent = float64(rm.utilization.MilliValue()) / float64(pm.allocatable.MilliValue()) * 100
-	}
-	return fmt.Sprintf("%dm (%d%%)", rm.utilization.MilliValue(), int64(utilPercent))
-}
-
-func (rm *resourceMetric) utilStringParMebi(pm *resourceMetric) string {
-	utilPercent := float64(0)
-	if pm.allocatable.MilliValue() > 0 {
-		utilPercent = float64(rm.utilization.MilliValue()) / float64(pm.allocatable.MilliValue()) * 100
 	}
 	return fmt.Sprintf("%dMi (%d%%)", rm.utilization.Value()/1048576, int64(utilPercent))
 }

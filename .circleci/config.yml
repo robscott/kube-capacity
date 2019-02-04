@@ -1,0 +1,18 @@
+version: 2
+
+jobs:
+  test:
+    working_directory: /go/src/github.com/robscott/kube-capacity
+
+    docker:
+      - image: circleci/golang:1.11
+
+    steps:
+      - checkout
+      - run: go test -v ./pkg/...
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
