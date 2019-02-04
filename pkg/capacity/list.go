@@ -77,8 +77,8 @@ func getMetrics() (*v1beta1.PodMetricsList, *v1beta1.NodeMetricsList) {
 
 func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList, nodeList *corev1.NodeList, nmList *v1beta1.NodeMetricsList) clusterMetric {
 	cm := clusterMetric{
-		cpu:         &resourceMetric{},
-		memory:      &resourceMetric{},
+		cpu:         &resourceMetric{resourceType: "cpu"},
+		memory:      &resourceMetric{resourceType: "memory"},
 		nodeMetrics: map[string]*nodeMetric{},
 		podMetrics:  map[string]*podMetric{},
 	}
@@ -86,10 +86,12 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	for _, node := range nodeList.Items {
 		cm.nodeMetrics[node.Name] = &nodeMetric{
 			cpu: &resourceMetric{
-				allocatable: node.Status.Allocatable["cpu"],
+				resourceType: "cpu",
+				allocatable:  node.Status.Allocatable["cpu"],
 			},
 			memory: &resourceMetric{
-				allocatable: node.Status.Allocatable["memory"],
+				resourceType: "memory",
+				allocatable:  node.Status.Allocatable["memory"],
 			},
 			podMetrics: map[string]*podMetric{},
 		}

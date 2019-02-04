@@ -51,10 +51,10 @@ func printHeaders(w *tabwriter.Writer, cm *clusterMetric, showPods bool, showUti
 			fmt.Fprintf(w, "* \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
 				cm.cpu.requestString(),
 				cm.cpu.limitString(),
-				cm.cpu.utilStringMilli(),
+				cm.cpu.utilString(),
 				cm.memory.requestString(),
 				cm.memory.limitString(),
-				cm.memory.utilStringMebi())
+				cm.memory.utilString())
 
 			fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
 		}
@@ -75,10 +75,10 @@ func printHeaders(w *tabwriter.Writer, cm *clusterMetric, showPods bool, showUti
 		fmt.Fprintf(w, "* \t %s \t %s \t %s \t %s \t %s \t %s \n",
 			cm.cpu.requestString(),
 			cm.cpu.limitString(),
-			cm.cpu.utilStringMilli(),
+			cm.cpu.utilString(),
 			cm.memory.requestString(),
 			cm.memory.limitString(),
-			cm.memory.utilStringMebi())
+			cm.memory.utilString())
 
 	} else {
 		fmt.Fprintln(w, "NODE\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
@@ -92,27 +92,37 @@ func printHeaders(w *tabwriter.Writer, cm *clusterMetric, showPods bool, showUti
 }
 
 func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, showUtil bool) {
+	podNames := make([]string, len(nm.podMetrics))
+
+	i := 0
+	for name := range nm.podMetrics {
+		podNames[i] = name
+		i++
+	}
+	sort.Strings(podNames)
+
 	if showPods && showUtil {
 		fmt.Fprintf(w, "%s \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
 			name,
 			nm.cpu.requestString(),
 			nm.cpu.limitString(),
-			nm.cpu.utilStringMilli(),
+			nm.cpu.utilString(),
 			nm.memory.requestString(),
 			nm.memory.limitString(),
-			nm.memory.utilStringMebi())
+			nm.memory.utilString())
 
-		for _, pm := range nm.podMetrics {
+		for _, podName := range podNames {
+			pm := nm.podMetrics[podName]
 			fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n",
 				name,
 				pm.namespace,
 				pm.name,
 				pm.cpu.requestString(),
 				pm.cpu.limitString(),
-				pm.cpu.utilStringMilli(),
+				pm.cpu.utilString(),
 				pm.memory.requestString(),
 				pm.memory.limitString(),
-				pm.memory.utilStringMebi())
+				pm.memory.utilString())
 		}
 
 		fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
@@ -125,7 +135,8 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 			nm.memory.requestString(),
 			nm.memory.limitString())
 
-		for _, pm := range nm.podMetrics {
+		for _, podName := range podNames {
+			pm := nm.podMetrics[podName]
 			fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \n",
 				name,
 				pm.namespace,
@@ -143,10 +154,10 @@ func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, 
 			name,
 			nm.cpu.requestString(),
 			nm.cpu.limitString(),
-			nm.cpu.utilStringMilli(),
+			nm.cpu.utilString(),
 			nm.memory.requestString(),
 			nm.memory.limitString(),
-			nm.memory.utilStringMebi())
+			nm.memory.utilString())
 
 	} else {
 		fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \n", name,

@@ -23,10 +23,11 @@ import (
 )
 
 type resourceMetric struct {
-	allocatable resource.Quantity
-	utilization resource.Quantity
-	request     resource.Quantity
-	limit       resource.Quantity
+	resourceType string
+	allocatable  resource.Quantity
+	utilization  resource.Quantity
+	request      resource.Quantity
+	limit        resource.Quantity
 }
 
 type clusterMetric struct {
@@ -64,12 +65,14 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod) {
 		name:      pod.Name,
 		namespace: pod.Namespace,
 		cpu: &resourceMetric{
-			request: req["cpu"],
-			limit:   limit["cpu"],
+			resourceType: "cpu",
+			request:      req["cpu"],
+			limit:        limit["cpu"],
 		},
 		memory: &resourceMetric{
-			request: req["memory"],
-			limit:   limit["memory"],
+			resourceType: "memory",
+			request:      req["memory"],
+			limit:        limit["memory"],
 		},
 	}
 
@@ -91,33 +94,25 @@ func (cm *clusterMetric) addNodeMetric(nm *nodeMetric) {
 }
 
 func (rm *resourceMetric) requestString() string {
-	return resourceString(rm.request, rm.allocatable)
+	return resourceString(rm.request, rm.allocatable, rm.resourceType)
 }
 
 func (rm *resourceMetric) limitString() string {
-	return resourceString(rm.limit, rm.allocatable)
+	return resourceString(rm.limit, rm.allocatable, rm.resourceType)
 }
 
-func (rm *resourceMetric) utilStringMilli() string {
-	utilPercent := float64(0)
-	if rm.allocatable.MilliValue() > 0 {
-		utilPercent = float64(rm.utilization.MilliValue()) / float64(rm.allocatable.MilliValue()) * 100
-	}
-	return fmt.Sprintf("%dm (%d%%)", rm.utilization.MilliValue(), int64(utilPercent))
+func (rm *resourceMetric) utilString() string {
+	return resourceString(rm.utilization, rm.allocatable, rm.resourceType)
 }
 
-func (rm *resourceMetric) utilStringMebi() string {
-	utilPercent := float64(0)
-	if rm.allocatable.MilliValue() > 0 {
-		utilPercent = float64(rm.utilization.MilliValue()) / float64(rm.allocatable.MilliValue()) * 100
-	}
-	return fmt.Sprintf("%dMi (%d%%)", rm.utilization.Value()/1048576, int64(utilPercent))
-}
-
-func resourceString(actual, allocatable resource.Quantity) string {
+func resourceString(actual, allocatable resource.Quantity, resourceType string) string {
 	utilPercent := float64(0)
 	if allocatable.MilliValue() > 0 {
 		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
 	}
-	return fmt.Sprintf("%s (%d%%)", actual.String(), int64(utilPercent))
+	if resourceType == "cpu" {
+		return fmt.Sprintf("%dm (%d%%)", actual.MilliValue(), int64(utilPercent))
+	} else {
+		return fmt.Sprintf("%dMi (%d%%)", actual.Value()/1048576, int64(utilPercent))
+	}
 }

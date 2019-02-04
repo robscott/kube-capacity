@@ -32,16 +32,18 @@ func TestBuildClusterMetricEmpty(t *testing.T) {
 
 	expected := clusterMetric{
 		cpu: &resourceMetric{
-			allocatable: resource.Quantity{},
-			request:     resource.Quantity{},
-			limit:       resource.Quantity{},
-			utilization: resource.Quantity{},
+			resourceType: "cpu",
+			allocatable:  resource.Quantity{},
+			request:      resource.Quantity{},
+			limit:        resource.Quantity{},
+			utilization:  resource.Quantity{},
 		},
 		memory: &resourceMetric{
-			allocatable: resource.Quantity{},
-			request:     resource.Quantity{},
-			limit:       resource.Quantity{},
-			utilization: resource.Quantity{},
+			resourceType: "memory",
+			allocatable:  resource.Quantity{},
+			request:      resource.Quantity{},
+			limit:        resource.Quantity{},
+			utilization:  resource.Quantity{},
 		},
 		nodeMetrics: map[string]*nodeMetric{},
 		podMetrics:  map[string]*podMetric{},
