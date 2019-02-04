@@ -77,7 +77,7 @@ example-node-2    tiller        tiller-deploy         140m (14%)      180m (18%)
 It's worth noting that utilization numbers from pods will likely not add up to the total node utilization numbers. Unlike request and limit numbers where node and cluster level numbers represent a sum of pod values, node metrics come directly from metrics-server and will likely include other forms of resource utilization.
 
 ## Kubernetes Configuration
-If a `KUBECONFIG` environment variable is specified, rbac-lookup will attempt to use the config at that path, otherwise it will default to `~/.kube/config`.
+If a `KUBECONFIG` environment variable is specified, kube-capacity will attempt to use the config at that path, otherwise it will default to `~/.kube/config`.
 
 ## Similar Projects
 There are already some great projects out there that have similar goals.
