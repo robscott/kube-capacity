@@ -1,22 +1,23 @@
 # kube-capacity
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/robscott/kube-capacity)](https://goreportcard.com/report/github.com/robscott/kube-capacity) [![CircleCI](https://circleci.com/gh/robscott/kube-capacity.svg?style=svg)](https://circleci.com/gh/robscott/kube-capacity)
+[![Go Report Card](https://goreportcard.com/badge/github.com/robscott/kube-capacity?v=1)](https://goreportcard.com/report/github.com/robscott/kube-capacity) [![CircleCI](https://circleci.com/gh/robscott/kube-capacity.svg?style=svg)](https://circleci.com/gh/robscott/kube-capacity)
 
 This is a simple CLI that provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster. It attempts to combine the best parts of the output from `kubectl top` and `kubectl describe` into an easy to use CLI focused on cluster resources.
 
 ## Installation
-Go binaries are automatically built with each release by [GoReleaser](https://github.com/goreleaser/goreleaser). These can be accessed on the GitHub [releases page](github.com/robscott/kube-capacity/releases) for this project.
+Go binaries are automatically built with each release by [GoReleaser](https://github.com/goreleaser/goreleaser). These can be accessed on the GitHub [releases page](https://github.com/robscott/kube-capacity/releases) for this project.
 
 ### Homebrew
 This project can also be installed with Homebrew:
 ```
+brew tap robscott/tap
 brew install robscott/tap/kube-capacity
 ```
 
 ## Usage
 By default, kube-capacity will output a list of nodes with the total CPU and Memory resource requests and limits for all the pods running on them. For clusters with more than one node, the first line will also include cluster wide totals. That output will look something like this:
 
-```bash
+```
 kube-capacity
 
 NODE              CPU REQUESTS    CPU LIMITS    MEMORY REQUESTS    MEMORY LIMITS
@@ -28,7 +29,7 @@ example-node-2    340m (34%)      120m (12%)    380Mi (13%)        410Mi (14%)
 ### Including Pods
 For more detailed output, kube-capacity can include pods in the output. When `-p` or `--pods` are passed to kube-capacity, it will include pod specific output that looks like this:
 
-```bash
+```
 kube-capacity --pods
 
 NODE              NAMESPACE     POD                   CPU REQUESTS    CPU LIMITS    MEMORY REQUESTS    MEMORY LIMITS
@@ -46,7 +47,7 @@ example-node-2    tiller        tiller-deploy         140m (14%)      180m (18%)
 ### Including Utilization
 To help understand how resource utilization compares to configured requests and limits, kube-capacity can include utilization metrics in the output. It's important to note that this output relies on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) functioning correctly in your cluster. When `-u` or `--util` are passed to kube-capacity, it will include resource utilization information that looks like this:
 
-```bash
+```
 kube-capacity --util
 
 NODE              CPU REQUESTS    CPU LIMITS    CPU UTIL    MEMORY REQUESTS    MEMORY LIMITS   MEMORY UTIL
@@ -58,7 +59,7 @@ example-node-2    340m (34%)      120m (12%)    30m (3%)    380Mi (13%)        4
 ### Including Pods and Utilization
 For more detailed output, kube-capacity can include both pods and resource utilization in the output. When `--util` and `--pods` are passed to kube-capacity, it will result in a wide output that looks like this:
 
-```bash
+```
 kube-capacity --pods --util
 
 NODE              NAMESPACE     POD                   CPU REQUESTS    CPU LIMITS   CPU UTIL     MEMORY REQUESTS    MEMORY LIMITS   MEMORY UTIL
