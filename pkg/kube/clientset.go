@@ -24,10 +24,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 
-	// Required for GKE
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	// Required for OIDC
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	// Required for GKE, OIDC, and more
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 // NewClientSet returns a new Kubernetes clientset

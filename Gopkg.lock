@@ -10,12 +10,56 @@
   version = "v0.35.1"
 
 [[projects]]
+  digest = "1:e1b859e3d9e90007d5fbf25edf57733b224f1857f6592636130afab3af8cfae7"
+  name = "contrib.go.opencensus.io/exporter/ocagent"
+  packages = ["."]
+  pruneopts = ""
+  revision = "00af367e65149ff1f2f4b93bbfbb84fd9297170d"
+  version = "v0.2.0"
+
+[[projects]]
+  digest = "1:f7b7b2c96bc64c56ecb2666cf42b0c46d894ca7cce775431c9bb23aafe9d0a77"
+  name = "github.com/Azure/go-autorest"
+  packages = [
+    "autorest",
+    "autorest/adal",
+    "autorest/azure",
+    "autorest/date",
+    "logger",
+    "tracing",
+  ]
+  pruneopts = ""
+  revision = "71d02b67e17a3d80abf8db171f1ca80c39eb2e90"
+  version = "v11.4.0"
+
+[[projects]]
+  digest = "1:0b2d5839372f6dc106fcaa70b6bd5832789a633c4e470540f76c2ec6c560e1c1"
+  name = "github.com/census-instrumentation/opencensus-proto"
+  packages = [
+    "gen-go/agent/common/v1",
+    "gen-go/agent/trace/v1",
+    "gen-go/resource/v1",
+    "gen-go/trace/v1",
+  ]
+  pruneopts = ""
+  revision = "7f2434bc10da710debe5c4315ed6d4df454b4024"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:0deddd908b6b4b768cfc272c16ee61e7088a60f7fe2f06c547bd3d8e1f8b8e77"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = ""
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:6098222470fe0172157ce9bbef5d2200df4edde17ee649c5d6e48330e4afa4c6"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   digest = "1:527e1e468c5586ef2645d143e9f5fbd50b4fe5abc8b1e25d9f1c416d22d24895"
@@ -37,6 +81,7 @@
     "ptypes/any",
     "ptypes/duration",
     "ptypes/timestamp",
+    "ptypes/wrappers",
   ]
   pruneopts = ""
   revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
@@ -69,6 +114,22 @@
   pruneopts = ""
   revision = "7c663266750e7d82587642f65e60bc4083f1f84e"
   version = "v0.2.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:94cef80cf61f29202b88654bb9af32f79b8d9c3b93a419dcf4c6d51c87afe775"
+  name = "github.com/gophercloud/gophercloud"
+  packages = [
+    ".",
+    "openstack",
+    "openstack/identity/v2/tenants",
+    "openstack/identity/v2/tokens",
+    "openstack/identity/v3/tokens",
+    "openstack/utils",
+    "pagination",
+  ]
+  pruneopts = ""
+  revision = "a2b0ad6ce68c8302027db1a5f9dbb03b0c8ab072"
 
 [[projects]]
   branch = "master"
@@ -170,6 +231,30 @@
   version = "v1.3.0"
 
 [[projects]]
+  digest = "1:ad67dfd3799a2c58f6c65871dd141d8b53f61f600aec48ce8d7fa16a4d5476f8"
+  name = "go.opencensus.io"
+  packages = [
+    ".",
+    "exemplar",
+    "internal",
+    "internal/tagencoding",
+    "plugin/ochttp",
+    "plugin/ochttp/propagation/b3",
+    "plugin/ochttp/propagation/tracecontext",
+    "stats",
+    "stats/internal",
+    "stats/view",
+    "tag",
+    "trace",
+    "trace/internal",
+    "trace/propagation",
+    "trace/tracestate",
+  ]
+  pruneopts = ""
+  revision = "b7bf3cdb64150a8c8c53b769fdeb2ba581bd4d4b"
+  version = "v0.18.0"
+
+[[projects]]
   branch = "master"
   digest = "1:cbc1ebc01ec2ceb2c3cc7b9e33357dbc3eff173335f02d9f01603f14102602a7"
   name = "golang.org/x/crypto"
@@ -188,6 +273,8 @@
     "http2",
     "http2/hpack",
     "idna",
+    "internal/timeseries",
+    "trace",
   ]
   pruneopts = ""
   revision = "d26f9f9a57f3fab6a695bec0d84433c2c50f8bbf"
@@ -205,6 +292,14 @@
   ]
   pruneopts = ""
   revision = "99b60b757ec124ebb7d6b7e97f153b19c10ce163"
+
+[[projects]]
+  branch = "master"
+  digest = "1:814474ab808c5e04b9334d046f8a0060fc1724c2c02acfd00a7cc0008d675455"
+  name = "golang.org/x/sync"
+  packages = ["semaphore"]
+  pruneopts = ""
+  revision = "37e7f081c4d4c64e13b10787722085407fe5d15f"
 
 [[projects]]
   branch = "master"
@@ -249,6 +344,14 @@
   revision = "85acf8d2951cb2a3bde7632f9ff273ef0379bcbd"
 
 [[projects]]
+  digest = "1:1ef3746d0b0a2ab4147e9fe251202756ff89d181c3c3cc67abdf40e375243cbc"
+  name = "google.golang.org/api"
+  packages = ["support/bundler"]
+  pruneopts = ""
+  revision = "19e022d8cf43ce81f046bae8cc18c5397cc7732f"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:bc09e719c4e2a15d17163f5272d9a3131c45d77542b7fdc53ff518815bc19ab3"
   name = "google.golang.org/appengine"
   packages = [
@@ -266,6 +369,54 @@
   pruneopts = ""
   revision = "e9657d882bb81064595ca3b56cbe2546bbabf7b1"
   version = "v1.4.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:91f75dc679abcf04b29b064a5b9c40a0b0561c86c322010fbf6fc08040cc48bc"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  pruneopts = ""
+  revision = "4b09977fb92221987e99d190c8f88f2c92727a29"
+
+[[projects]]
+  digest = "1:39d4d828b87d58d114fdc211f0638f32dcae84019fe17d6b48f9b697f4b60213"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/binarylog",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = ""
+  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
+  version = "v1.18.0"
 
 [[projects]]
   digest = "1:75fb3fcfc73a8c723efde7777b40e8e8ff9babf30d8c56160d01beffea8a95a6"
@@ -411,9 +562,12 @@
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/apis/clientauthentication/v1beta1",
     "pkg/version",
+    "plugin/pkg/client/auth",
+    "plugin/pkg/client/auth/azure",
     "plugin/pkg/client/auth/exec",
     "plugin/pkg/client/auth/gcp",
     "plugin/pkg/client/auth/oidc",
+    "plugin/pkg/client/auth/openstack",
     "rest",
     "rest/watch",
     "third_party/forked/golang/template",
@@ -486,8 +640,7 @@
     "k8s.io/apimachinery/pkg/api/resource",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes",
-    "k8s.io/client-go/plugin/pkg/client/auth/gcp",
-    "k8s.io/client-go/plugin/pkg/client/auth/oidc",
+    "k8s.io/client-go/plugin/pkg/client/auth",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/kubernetes/pkg/kubectl/util/resource",
