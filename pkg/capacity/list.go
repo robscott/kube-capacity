@@ -16,6 +16,7 @@ package capacity
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/robscott/kube-capacity/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +27,11 @@ import (
 // List gathers cluster resource data and outputs it
 func List(args []string, showPods bool, showUtil bool) {
 	podList, nodeList := getPodsAndNodes()
-	pmList, nmList := getMetrics()
+	pmList := &v1beta1.PodMetricsList{}
+	nmList := &v1beta1.NodeMetricsList{}
+	if showUtil {
+		pmList, nmList = getMetrics()
+	}
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
 	printList(&cm, showPods, showUtil)
 }
@@ -34,20 +39,20 @@ func List(args []string, showPods bool, showUtil bool) {
 func getPodsAndNodes() (*corev1.PodList, *corev1.NodeList) {
 	clientset, err := kube.NewClientSet()
 	if err != nil {
-		fmt.Println("Error connecting to Kubernetes")
-		panic(err.Error())
+		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
+		os.Exit(1)
 	}
 
 	nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
-		fmt.Println("Error listing Nodes")
-		panic(err.Error())
+		fmt.Printf("Error listing Nodes: %v\n", err)
+		os.Exit(2)
 	}
 
 	podList, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
-		fmt.Println("Error listing Nodes")
-		panic(err.Error())
+		fmt.Printf("Error listing Pods: %v\n", err)
+		os.Exit(3)
 	}
 
 	return podList, nodeList
@@ -56,20 +61,22 @@ func getPodsAndNodes() (*corev1.PodList, *corev1.NodeList) {
 func getMetrics() (*v1beta1.PodMetricsList, *v1beta1.NodeMetricsList) {
 	mClientset, err := kube.NewMetricsClientSet()
 	if err != nil {
-		fmt.Println("Error connecting to Metrics Server")
-		panic(err.Error())
+		fmt.Printf("Error connecting to Metrics API: %v\n", err)
+		os.Exit(4)
 	}
 
 	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
 	if err != nil {
-		fmt.Println("Error getting metrics")
-		panic(err.Error())
+		fmt.Printf("Error getting Node Metrics: %v\n", err)
+		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
+		os.Exit(5)
 	}
 
 	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
 	if err != nil {
-		fmt.Println("Error getting metrics")
-		panic(err.Error())
+		fmt.Printf("Error getting Pod Metrics: %v\n", err)
+		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
+		os.Exit(6)
 	}
 
 	return pmList, nmList
