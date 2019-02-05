@@ -105,7 +105,9 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	}
 
 	for _, pod := range podList.Items {
-		cm.addPodMetric(&pod)
+		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
+			cm.addPodMetric(&pod)
+		}
 	}
 
 	for _, node := range nodeList.Items {
@@ -122,9 +124,11 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 
 	for _, pod := range pmList.Items {
 		pm := cm.podMetrics[fmt.Sprintf("%s-%s", pod.GetNamespace(), pod.GetName())]
-		for _, container := range pod.Containers {
-			pm.cpu.utilization.Add(container.Usage["cpu"])
-			pm.memory.utilization.Add(container.Usage["memory"])
+		if pm != nil {
+			for _, container := range pod.Containers {
+				pm.cpu.utilization.Add(container.Usage["cpu"])
+				pm.memory.utilization.Add(container.Usage["memory"])
+			}
 		}
 	}
 
