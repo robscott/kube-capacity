@@ -68,12 +68,14 @@ func getMetrics() (*v1beta1.PodMetricsList, *v1beta1.NodeMetricsList) {
 	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error getting Node Metrics: %v\n", err)
+		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
 		os.Exit(5)
 	}
 
 	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error getting Pod Metrics: %v\n", err)
+		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
 		os.Exit(6)
 	}
 
