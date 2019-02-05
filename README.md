@@ -76,6 +76,9 @@ example-node-2    tiller        tiller-deploy         140m (14%)      180m (18%)
 
 It's worth noting that utilization numbers from pods will likely not add up to the total node utilization numbers. Unlike request and limit numbers where node and cluster level numbers represent a sum of pod values, node metrics come directly from metrics-server and will likely include other forms of resource utilization.
 
+## Prerequisites
+Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
+
 ## Kubernetes Configuration
 If a `KUBECONFIG` environment variable is specified, kube-capacity will attempt to use the config at that path, otherwise it will default to `~/.kube/config`.
 
