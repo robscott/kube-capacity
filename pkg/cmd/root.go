@@ -24,24 +24,29 @@ import (
 
 var showPods bool
 var showUtil bool
+var podLabels string
+var nodeLabels string
+var namespaceLabels string
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
 	Short: "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster",
 	Long:  "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster",
-	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.ParseFlags(args); err != nil {
 			fmt.Printf("Error parsing flags: %v", err)
 		}
 
-		capacity.List(args, showPods, showUtil)
+		capacity.List(showPods, showUtil, podLabels, nodeLabels, namespaceLabels)
 	},
 }
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&showPods, "pods", "p", false, "Set this flag to include pods in output")
 	rootCmd.PersistentFlags().BoolVarP(&showUtil, "util", "u", false, "Set this flag to include resource utilization in output")
+	rootCmd.PersistentFlags().StringVarP(&podLabels, "pod-labels", "l", "", "Labels to filter pods with.")
+	rootCmd.PersistentFlags().StringVarP(&nodeLabels, "node-labels", "", "", "Labels to filter nodes with.")
+	rootCmd.PersistentFlags().StringVarP(&namespaceLabels, "namespace-labels", "n", "", "Labels to filter namespaces with.")
 }
 
 // Execute is the primary entrypoint for this CLI

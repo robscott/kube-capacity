@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	resourcehelper "k8s.io/kubernetes/pkg/kubectl/util/resource"
 )
@@ -57,11 +58,11 @@ func (rm *resourceMetric) addMetric(m *resourceMetric) {
 	rm.limit.Add(m.limit)
 }
 
-func (cm *clusterMetric) addPodMetric(pod *corev1.Pod) {
+func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMetrics) {
 	req, limit := resourcehelper.PodRequestsAndLimits(pod)
 	key := fmt.Sprintf("%s-%s", pod.Namespace, pod.Name)
 
-	cm.podMetrics[key] = &podMetric{
+	pm := &podMetric{
 		name:      pod.Name,
 		namespace: pod.Namespace,
 		cpu: &resourceMetric{
@@ -75,9 +76,15 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod) {
 			limit:        limit["memory"],
 		},
 	}
+	cm.podMetrics[key] = pm
 
 	nm := cm.nodeMetrics[pod.Spec.NodeName]
 	if nm != nil {
+		cm.cpu.request.Add(req["cpu"])
+		cm.cpu.limit.Add(limit["cpu"])
+		cm.memory.request.Add(req["memory"])
+		cm.memory.limit.Add(limit["memory"])
+
 		cm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
 		cm.podMetrics[key].memory.allocatable = nm.memory.allocatable
 		nm.podMetrics[key] = cm.podMetrics[key]
@@ -85,6 +92,21 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod) {
 		nm.cpu.limit.Add(limit["cpu"])
 		nm.memory.request.Add(req["memory"])
 		nm.memory.limit.Add(limit["memory"])
+	}
+
+	for _, container := range podMetrics.Containers {
+		pm.cpu.utilization.Add(container.Usage["cpu"])
+		pm.memory.utilization.Add(container.Usage["memory"])
+
+		if nm == nil {
+			continue
+		}
+
+		nm.cpu.utilization.Add(container.Usage["cpu"])
+		nm.memory.utilization.Add(container.Usage["memory"])
+
+		cm.cpu.utilization.Add(container.Usage["cpu"])
+		cm.memory.utilization.Add(container.Usage["memory"])
 	}
 }
 
