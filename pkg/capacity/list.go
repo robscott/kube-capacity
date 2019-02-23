@@ -28,8 +28,8 @@ import (
 )
 
 // List gathers cluster resource data and outputs it
-func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels string) {
-	clientset, err := kube.NewClientSet()
+func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeContext string) {
+	clientset, err := kube.NewClientSet(kubeContext)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)
@@ -38,7 +38,7 @@ func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels string
 	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, namespaceLabels)
 	pmList := &v1beta1.PodMetricsList{}
 	if showUtil {
-		mClientset, err := kube.NewMetricsClientSet()
+		mClientset, err := kube.NewMetricsClientSet(kubeContext)
 		if err != nil {
 			fmt.Printf("Error connecting to Metrics API: %v\n", err)
 			os.Exit(4)
@@ -75,7 +75,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, name
 	}
 
 	for _, pod := range podList.Items {
-		if ! nodes[pod.Spec.NodeName] {
+		if !nodes[pod.Spec.NodeName] {
 			continue
 		}
 
@@ -101,7 +101,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, name
 		newPodItems := []corev1.Pod{}
 
 		for _, pod := range podList.Items {
-			if ! namespaces[pod.GetNamespace()] {
+			if !namespaces[pod.GetNamespace()] {
 				continue
 			}
 

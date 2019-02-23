@@ -27,26 +27,28 @@ var showUtil bool
 var podLabels string
 var nodeLabels string
 var namespaceLabels string
+var kubeContext string
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
-	Short: "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster",
-	Long:  "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster",
+	Short: "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster.",
+	Long:  "kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.ParseFlags(args); err != nil {
 			fmt.Printf("Error parsing flags: %v", err)
 		}
 
-		capacity.List(showPods, showUtil, podLabels, nodeLabels, namespaceLabels)
+		capacity.List(showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext)
 	},
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&showPods, "pods", "p", false, "Set this flag to include pods in output")
-	rootCmd.PersistentFlags().BoolVarP(&showUtil, "util", "u", false, "Set this flag to include resource utilization in output")
-	rootCmd.PersistentFlags().StringVarP(&podLabels, "pod-labels", "l", "", "Labels to filter pods with.")
-	rootCmd.PersistentFlags().StringVarP(&nodeLabels, "node-labels", "", "", "Labels to filter nodes with.")
-	rootCmd.PersistentFlags().StringVarP(&namespaceLabels, "namespace-labels", "n", "", "Labels to filter namespaces with.")
+	rootCmd.PersistentFlags().BoolVarP(&showPods, "pods", "p", false, "includes pods in output")
+	rootCmd.PersistentFlags().BoolVarP(&showUtil, "util", "u", false, "includes resource utilization in output")
+	rootCmd.PersistentFlags().StringVarP(&podLabels, "pod-labels", "l", "", "labels to filter pods with")
+	rootCmd.PersistentFlags().StringVarP(&nodeLabels, "node-labels", "", "", "labels to filter nodes with")
+	rootCmd.PersistentFlags().StringVarP(&namespaceLabels, "namespace-labels", "n", "", "labels to filter namespaces with")
+	rootCmd.PersistentFlags().StringVarP(&kubeContext, "context", "", "", "context to use for Kubernetes config")
 }
 
 // Execute is the primary entrypoint for this CLI

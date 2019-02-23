@@ -76,11 +76,28 @@ example-node-2    tiller        tiller-deploy         140m (14%)      180m (18%)
 
 It's worth noting that utilization numbers from pods will likely not add up to the total node utilization numbers. Unlike request and limit numbers where node and cluster level numbers represent a sum of pod values, node metrics come directly from metrics-server and will likely include other forms of resource utilization.
 
+### Filtering By Labels
+For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels. The following examples show how to use these filters:
+
+```
+kube-capacity --pod-labels app=nginx
+kube-capacity --namespace-labels team=api
+kube-capacity --node-labels kubernetes.io/role=node
+```
+
 ## Prerequisites
 Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
 
-## Kubernetes Configuration
-If a `KUBECONFIG` environment variable is specified, kube-capacity will attempt to use the config at that path, otherwise it will default to `~/.kube/config`.
+## Flags Supported
+```
+      --context string            context to use for Kubernetes config
+  -h, --help                      help for kube-capacity
+  -n, --namespace-labels string   labels to filter namespaces with
+      --node-labels string        labels to filter nodes with
+  -l, --pod-labels string         labels to filter pods with
+  -p, --pods                      includes pods in output
+  -u, --util                      includes resource utilization in output
+```
 
 ## Similar Projects
 There are already some great projects out there that have similar goals.

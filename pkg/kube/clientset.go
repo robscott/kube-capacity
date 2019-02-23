@@ -25,8 +25,8 @@ import (
 )
 
 // NewClientSet returns a new Kubernetes clientset
-func NewClientSet() (*kubernetes.Clientset, error) {
-	config, err := getKubeConfig()
+func NewClientSet(kubeContext string) (*kubernetes.Clientset, error) {
+	config, err := getKubeConfig(kubeContext)
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +35,8 @@ func NewClientSet() (*kubernetes.Clientset, error) {
 }
 
 // NewMetricsClientSet returns a new clientset for Kubernetes metrics
-func NewMetricsClientSet() (*metrics.Clientset, error) {
-	config, err := getKubeConfig()
+func NewMetricsClientSet(kubeContext string) (*metrics.Clientset, error) {
+	config, err := getKubeConfig(kubeContext)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +44,9 @@ func NewMetricsClientSet() (*metrics.Clientset, error) {
 	return metrics.NewForConfig(config)
 }
 
-func getKubeConfig() (*rest.Config, error) {
+func getKubeConfig(kubeContext string) (*rest.Config, error) {
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
-		&clientcmd.ConfigOverrides{},
+		&clientcmd.ConfigOverrides{CurrentContext: kubeContext},
 	).ClientConfig()
 }
