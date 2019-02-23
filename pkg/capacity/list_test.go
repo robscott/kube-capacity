@@ -15,6 +15,7 @@
 package capacity
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,11 +24,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestBuildClusterMetricEmpty(t *testing.T) {
 	cm := buildClusterMetric(
-		&corev1.PodList{}, &v1beta1.PodMetricsList{}, &corev1.NodeList{}, &v1beta1.NodeMetricsList{},
+		&corev1.PodList{}, &v1beta1.PodMetricsList{}, &corev1.NodeList{},
 	)
 
 	expected := clusterMetric{
@@ -129,18 +132,6 @@ func TestBuildClusterMetricFull(t *testing.T) {
 					},
 				},
 			},
-		}, &v1beta1.NodeMetricsList{
-			Items: []v1beta1.NodeMetrics{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "example-node-1",
-					},
-					Usage: corev1.ResourceList{
-						"cpu":    resource.MustParse("28m"),
-						"memory": resource.MustParse("438Mi"),
-					},
-				},
-			},
 		},
 	)
 
@@ -148,14 +139,14 @@ func TestBuildClusterMetricFull(t *testing.T) {
 		allocatable: resource.MustParse("1000m"),
 		request:     resource.MustParse("350m"),
 		limit:       resource.MustParse("400m"),
-		utilization: resource.MustParse("28m"),
+		utilization: resource.MustParse("23m"),
 	}
 
 	memoryExpected := &resourceMetric{
 		allocatable: resource.MustParse("4000Mi"),
 		request:     resource.MustParse("400Mi"),
 		limit:       resource.MustParse("700Mi"),
-		utilization: resource.MustParse("438Mi"),
+		utilization: resource.MustParse("299Mi"),
 	}
 
 	assert.Len(t, cm.podMetrics, 1)
@@ -187,4 +178,118 @@ func ensureEqualResourceMetric(t *testing.T, actual *resourceMetric, expected *r
 	assert.Equal(t, actual.utilization.MilliValue(), expected.utilization.MilliValue())
 	assert.Equal(t, actual.request.MilliValue(), expected.request.MilliValue())
 	assert.Equal(t, actual.limit.MilliValue(), expected.limit.MilliValue())
+}
+
+func listNodes(n *corev1.NodeList) []string {
+	nodes := []string{}
+
+	for _, node := range n.Items {
+		nodes = append(nodes, node.GetName())
+	}
+
+	return nodes
+}
+
+func listPods(p *corev1.PodList) []string {
+	pods := []string{}
+
+	for _, pod := range p.Items {
+		pods = append(pods, fmt.Sprintf("%s/%s", pod.GetNamespace(), pod.GetName()))
+	}
+
+	return pods
+}
+
+func node(name string, labels map[string]string) *corev1.Node {
+	return &corev1.Node{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Node",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: labels,
+		},
+	}
+}
+
+func namespace(name string, labels map[string]string) *corev1.Namespace {
+	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Namespace",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: labels,
+		},
+	}
+}
+
+func pod(node, namespace, name string, labels map[string]string) *corev1.Pod {
+	return &corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Pod",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Namespace: namespace,
+			Labels: labels,
+		},
+		Spec: corev1.PodSpec{
+			NodeName: node,
+		},
+	}
+}
+
+func TestGetPodsAndNodes(t *testing.T) {
+	clientset := fake.NewSimpleClientset(
+		node("mynode", map[string]string{"hello": "world"}),
+		node("mynode2", map[string]string{"hello": "world", "moon": "lol"}),
+		namespace("default", map[string]string{"app": "true"}),
+		namespace("kube-system", map[string]string{"system": "true"}),
+		namespace("other", map[string]string{"app": "true", "system": "true"}),
+		namespace("another", map[string]string{"hello": "world"}),
+		pod("mynode", "default", "mypod", map[string]string{"a": "test"}),
+		pod("mynode2", "kube-system", "mypod1", map[string]string{"b": "test"}),
+		pod("mynode", "other", "mypod2", map[string]string{"c": "test"}),
+		pod("mynode2", "other", "mypod3", map[string]string{"d": "test"}),
+		pod("mynode2", "default", "mypod4", map[string]string{"e": "test"}),
+		pod("mynode", "another", "mypod5", map[string]string{"f": "test"}),
+		pod("mynode", "default", "mypod6", map[string]string{"g": "test"}),
+	)
+
+	podList, nodeList := getPodsAndNodes(clientset, "", "", "")
+	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"default/mypod", "kube-system/mypod1", "other/mypod2", "other/mypod3", "default/mypod4",
+		"another/mypod5", "default/mypod6",
+	}, listPods(podList))
+
+	podList, nodeList = getPodsAndNodes(clientset, "", "hello=world", "")
+	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"default/mypod", "kube-system/mypod1", "other/mypod2", "other/mypod3", "default/mypod4",
+		"another/mypod5", "default/mypod6",
+	}, listPods(podList))
+
+	podList, nodeList = getPodsAndNodes(clientset, "", "moon=lol", "")
+	assert.Equal(t, []string{"mynode2"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"kube-system/mypod1", "other/mypod3", "default/mypod4",
+	}, listPods(podList))
+
+	podList, nodeList = getPodsAndNodes(clientset, "a=test", "", "")
+	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"default/mypod",
+	}, listPods(podList))
+
+
+	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "app=true")
+	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"default/mypod",
+	}, listPods(podList))
 }
