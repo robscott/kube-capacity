@@ -8,10 +8,16 @@ This is a simple CLI that provides an overview of the resource requests, limits,
 Go binaries are automatically built with each release by [GoReleaser](https://github.com/goreleaser/goreleaser). These can be accessed on the GitHub [releases page](https://github.com/robscott/kube-capacity/releases) for this project.
 
 ### Homebrew
-This project can also be installed with Homebrew:
+This project can be installed with [Homebrew](https://brew.sh/):
 ```
 brew tap robscott/tap
 brew install robscott/tap/kube-capacity
+```
+
+### Krew
+This project can be installed with [Krew](https://github.com/GoogleContainerTools/krew):
+```
+kubectl krew install resource-capacity
 ```
 
 ## Usage
