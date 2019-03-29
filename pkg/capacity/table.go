@@ -8,14 +8,14 @@ import (
 	"text/tabwriter"
 )
 
-type textPrinter struct {
+type tablePrinter struct {
 	cm       *clusterMetric
 	showPods bool
 	showUtil bool
 	w        *tabwriter.Writer
 }
 
-func (tp textPrinter) Print() {
+func (tp tablePrinter) Print() {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
 	names := make([]string, len(tp.cm.nodeMetrics))
 
@@ -35,7 +35,7 @@ func (tp textPrinter) Print() {
 	tp.w.Flush()
 }
 
-func (tp *textPrinter) printHeaders() {
+func (tp *tablePrinter) printHeaders() {
 	if tp.showPods && tp.showUtil {
 		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
 
@@ -83,7 +83,7 @@ func (tp *textPrinter) printHeaders() {
 	}
 }
 
-func (tp *textPrinter) printNode(name string, nm *nodeMetric) {
+func (tp *tablePrinter) printNode(name string, nm *nodeMetric) {
 	podNames := make([]string, len(nm.podMetrics))
 
 	i := 0

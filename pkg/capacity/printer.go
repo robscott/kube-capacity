@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	//TextOutput is the constant value for output type text
-	TextOutput string = "text"
+	//TableOutput is the constant value for output type text
+	TableOutput string = "table"
 	//JSONOutput is the constant value for output type text
 	JSONOutput string = "json"
 )
@@ -30,7 +30,7 @@ const (
 // SupportedOutputs returns a string list of output formats supposed by this package
 func SupportedOutputs() []string {
 	return []string{
-		TextOutput,
+		TableOutput,
 		JSONOutput,
 	}
 }
@@ -58,8 +58,8 @@ func printerFactory(cm *clusterMetric, showPods bool, showUtil bool, outputType 
 			showUtil: showUtil,
 		}
 		return response, nil
-	case TextOutput:
-		response = textPrinter{
+	case TableOutput:
+		response = tablePrinter{
 			cm:       cm,
 			showPods: showPods,
 			showUtil: showUtil,
