@@ -17,151 +17,56 @@ package capacity
 import (
 	"fmt"
 	"os"
-	"sort"
 	"text/tabwriter"
 )
 
-func printList(cm *clusterMetric, showPods bool, showUtil bool) {
-	names := make([]string, len(cm.nodeMetrics))
+const (
+	//TextOutput is the constant value for output type text
+	TextOutput string = "text"
+	//JSONOutput is the constant value for output type text
+	JSONOutput string = "json"
+)
 
-	i := 0
-	for name := range cm.nodeMetrics {
-		names[i] = name
-		i++
-	}
-	sort.Strings(names)
-
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 8, 2, ' ', 0)
-
-	printHeaders(w, cm, showPods, showUtil)
-
-	for _, name := range names {
-		printNode(w, name, cm.nodeMetrics[name], showPods, showUtil)
-	}
-
-	w.Flush()
-}
-
-func printHeaders(w *tabwriter.Writer, cm *clusterMetric, showPods bool, showUtil bool) {
-	if showPods && showUtil {
-		fmt.Fprintln(w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
-
-		if len(cm.nodeMetrics) > 1 {
-			fmt.Fprintf(w, "* \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
-				cm.cpu.requestString(),
-				cm.cpu.limitString(),
-				cm.cpu.utilString(),
-				cm.memory.requestString(),
-				cm.memory.limitString(),
-				cm.memory.utilString())
-
-			fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
-		}
-	} else if showPods {
-		fmt.Fprintln(w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
-
-		fmt.Fprintf(w, "* \t *\t *\t %s \t %s \t %s \t %s \n",
-			cm.cpu.requestString(),
-			cm.cpu.limitString(),
-			cm.memory.requestString(),
-			cm.memory.limitString())
-
-		fmt.Fprintln(w, "\t\t\t\t\t\t")
-
-	} else if showUtil {
-		fmt.Fprintln(w, "NODE\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
-
-		fmt.Fprintf(w, "* \t %s \t %s \t %s \t %s \t %s \t %s \n",
-			cm.cpu.requestString(),
-			cm.cpu.limitString(),
-			cm.cpu.utilString(),
-			cm.memory.requestString(),
-			cm.memory.limitString(),
-			cm.memory.utilString())
-
-	} else {
-		fmt.Fprintln(w, "NODE\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
-
-		if len(cm.nodeMetrics) > 1 {
-			fmt.Fprintf(w, "* \t %s \t %s \t %s \t %s \n",
-				cm.cpu.requestString(), cm.cpu.limitString(),
-				cm.memory.requestString(), cm.memory.limitString())
-		}
+// SupportedOutputs returns a string list of output formats supposed by this package
+func SupportedOutputs() []string {
+	return []string{
+		TextOutput,
+		JSONOutput,
 	}
 }
 
-func printNode(w *tabwriter.Writer, name string, nm *nodeMetric, showPods bool, showUtil bool) {
-	podNames := make([]string, len(nm.podMetrics))
+type printer interface {
+	Print()
+}
 
-	i := 0
-	for name := range nm.podMetrics {
-		podNames[i] = name
-		i++
+func printList(cm *clusterMetric, showPods bool, showUtil bool, output string) {
+	p, err := printerFactory(cm, showPods, showUtil, output)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	sort.Strings(podNames)
+	p.Print()
+}
 
-	if showPods && showUtil {
-		fmt.Fprintf(w, "%s \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.cpu.utilString(),
-			nm.memory.requestString(),
-			nm.memory.limitString(),
-			nm.memory.utilString())
-
-		for _, podName := range podNames {
-			pm := nm.podMetrics[podName]
-			fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-				name,
-				pm.namespace,
-				pm.name,
-				pm.cpu.requestString(),
-				pm.cpu.limitString(),
-				pm.cpu.utilString(),
-				pm.memory.requestString(),
-				pm.memory.limitString(),
-				pm.memory.utilString())
+func printerFactory(cm *clusterMetric, showPods bool, showUtil bool, outputType string) (printer, error) {
+	var response printer
+	switch outputType {
+	case JSONOutput:
+		response = jsonPrinter{
+			cm:       cm,
+			showPods: showPods,
+			showUtil: showUtil,
 		}
-
-		fmt.Fprintln(w, "\t\t\t\t\t\t\t\t")
-
-	} else if showPods {
-		fmt.Fprintf(w, "%s \t *\t *\t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.memory.requestString(),
-			nm.memory.limitString())
-
-		for _, podName := range podNames {
-			pm := nm.podMetrics[podName]
-			fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-				name,
-				pm.namespace,
-				pm.name,
-				pm.cpu.requestString(),
-				pm.cpu.limitString(),
-				pm.memory.requestString(),
-				pm.memory.limitString())
+		return response, nil
+	case TextOutput:
+		response = textPrinter{
+			cm:       cm,
+			showPods: showPods,
+			showUtil: showUtil,
+			w:        new(tabwriter.Writer),
 		}
-
-		fmt.Fprintln(w, "\t\t\t\t\t\t")
-
-	} else if showUtil {
-		fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.cpu.utilString(),
-			nm.memory.requestString(),
-			nm.memory.limitString(),
-			nm.memory.utilString())
-
-	} else {
-		fmt.Fprintf(w, "%s \t %s \t %s \t %s \t %s \n", name,
-			nm.cpu.requestString(), nm.cpu.limitString(),
-			nm.memory.requestString(), nm.memory.limitString())
+		return response, nil
+	default:
+		return response, fmt.Errorf("Called with an unsupported output type: %s", outputType)
 	}
 }

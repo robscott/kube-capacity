@@ -28,6 +28,7 @@ var podLabels string
 var nodeLabels string
 var namespaceLabels string
 var kubeContext string
+var outputFormat string
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -38,7 +39,12 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Error parsing flags: %v", err)
 		}
 
-		capacity.List(showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext)
+		if err := validateOutputType(outputFormat); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		capacity.List(showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat)
 	},
 }
 
@@ -49,6 +55,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&nodeLabels, "node-labels", "", "", "labels to filter nodes with")
 	rootCmd.PersistentFlags().StringVarP(&namespaceLabels, "namespace-labels", "n", "", "labels to filter namespaces with")
 	rootCmd.PersistentFlags().StringVarP(&kubeContext, "context", "", "", "context to use for Kubernetes config")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "text", fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
 }
 
 // Execute is the primary entrypoint for this CLI
@@ -57,4 +64,13 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func validateOutputType(outputType string) error {
+	for _, format := range capacity.SupportedOutputs() {
+		if format == outputType {
+			return nil
+		}
+	}
+	return fmt.Errorf("Unsupported Output Type. We only support: %v", capacity.SupportedOutputs())
 }
