@@ -55,7 +55,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&nodeLabels, "node-labels", "", "", "labels to filter nodes with")
 	rootCmd.PersistentFlags().StringVarP(&namespaceLabels, "namespace-labels", "n", "", "labels to filter namespaces with")
 	rootCmd.PersistentFlags().StringVarP(&kubeContext, "context", "", "", "context to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "text", fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", capacity.TableOutput, fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
 }
 
 // Execute is the primary entrypoint for this CLI
