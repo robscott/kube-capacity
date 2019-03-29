@@ -30,11 +30,11 @@ type jsonResourceOutput struct {
 }
 
 type jsonClusterMetrics struct {
-	Nodes   []*jsonNodeMetric `json:"nodes"`
-	Cluster struct {
+	Nodes         []*jsonNodeMetric `json:"nodes"`
+	ClusterTotals struct {
 		CPU    *jsonResourceOutput `json:"cpu"`
 		Memory *jsonResourceOutput `json:"memory"`
-	} `json:"cluster"`
+	} `json:"cluster_totals"`
 }
 
 type jsonPrinter struct {
@@ -58,8 +58,8 @@ func (jp jsonPrinter) Print() {
 func (jp *jsonPrinter) buildJSONClusterMetrics() jsonClusterMetrics {
 	var response jsonClusterMetrics
 
-	response.Cluster.CPU = jp.buildJSONResourceOutput(jp.cm.cpu)
-	response.Cluster.Memory = jp.buildJSONResourceOutput(jp.cm.memory)
+	response.ClusterTotals.CPU = jp.buildJSONResourceOutput(jp.cm.cpu)
+	response.ClusterTotals.Memory = jp.buildJSONResourceOutput(jp.cm.memory)
 
 	for key, val := range jp.cm.nodeMetrics {
 		var node jsonNodeMetric
