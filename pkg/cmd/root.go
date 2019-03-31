@@ -1,4 +1,4 @@
-// Copyright 2019 Rob Scott
+// Copyright 2019 Kube Capacity Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		capacity.List(showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat)
+		capacity.FetchAndPrint(showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat)
 	},
 }
 

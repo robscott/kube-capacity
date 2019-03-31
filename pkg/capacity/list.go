@@ -1,4 +1,4 @@
-// Copyright 2019 Rob Scott
+// Copyright 2019 Kube Capacity Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,151 +15,115 @@
 package capacity
 
 import (
+	"encoding/json"
 	"fmt"
-	"os"
 
-	"k8s.io/client-go/kubernetes"
-	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
-
-	"github.com/robscott/kube-capacity/pkg/kube"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"sigs.k8s.io/yaml"
 )
 
-// List gathers cluster resource data and outputs it
-func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeContext string, output string) {
-	clientset, err := kube.NewClientSet(kubeContext)
-	if err != nil {
-		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
-		os.Exit(1)
-	}
-
-	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, namespaceLabels)
-	pmList := &v1beta1.PodMetricsList{}
-	if showUtil {
-		mClientset, err := kube.NewMetricsClientSet(kubeContext)
-		if err != nil {
-			fmt.Printf("Error connecting to Metrics API: %v\n", err)
-			os.Exit(4)
-		}
-
-		pmList = getMetrics(mClientset)
-	}
-	cm := buildClusterMetric(podList, pmList, nodeList)
-	printList(&cm, showPods, showUtil, output)
+type listNodeMetric struct {
+	Name   string              `json:"name"`
+	CPU    *listResourceOutput `json:"cpu,omitempty"`
+	Memory *listResourceOutput `json:"memory,omitempty"`
+	Pods   []*listPod          `json:"pods,omitempty"`
 }
 
-func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels string) (*corev1.PodList, *corev1.NodeList) {
-	nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{
-		LabelSelector: nodeLabels,
-	})
+type listPod struct {
+	Name      string              `json:"name"`
+	Namespace string              `json:"namespace"`
+	CPU       *listResourceOutput `json:"cpu"`
+	Memory    *listResourceOutput `json:"memory"`
+}
+
+type listResourceOutput struct {
+	Requests       string `json:"requests"`
+	RequestsPct    string `json:"requests_pct"`
+	Limits         string `json:"limits"`
+	LimitsPct      string `json:"limits_pct"`
+	Utilization    string `json:"utilization,omitempty"`
+	UtilizationPct string `json:"utilization_pct,omitempty"`
+}
+
+type listClusterMetrics struct {
+	Nodes         []*listNodeMetric `json:"nodes"`
+	ClusterTotals struct {
+		CPU    *listResourceOutput `json:"cpu"`
+		Memory *listResourceOutput `json:"memory"`
+	} `json:"cluster_totals"`
+}
+
+type listPrinter struct {
+	cm       *clusterMetric
+	showPods bool
+	showUtil bool
+}
+
+func (lp listPrinter) Print(outputType string) {
+	listOutput := lp.buildListClusterMetrics()
+
+	jsonRaw, err := json.MarshalIndent(listOutput, "", "  ")
 	if err != nil {
-		fmt.Printf("Error listing Nodes: %v\n", err)
-		os.Exit(2)
-	}
-
-	podList, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{
-		LabelSelector: podLabels,
-	})
-	if err != nil {
-		fmt.Printf("Error listing Pods: %v\n", err)
-		os.Exit(3)
-	}
-
-	newPodItems := []corev1.Pod{}
-
-	nodes := map[string]bool{}
-	for _, node := range nodeList.Items {
-		nodes[node.GetName()] = true
-	}
-
-	for _, pod := range podList.Items {
-		if !nodes[pod.Spec.NodeName] {
-			continue
-		}
-
-		newPodItems = append(newPodItems, pod)
-	}
-
-	podList.Items = newPodItems
-
-	if namespaceLabels != "" {
-		namespaceList, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{
-			LabelSelector: namespaceLabels,
-		})
-		if err != nil {
-			fmt.Printf("Error listing Namespaces: %v\n", err)
-			os.Exit(3)
-		}
-
-		namespaces := map[string]bool{}
-		for _, ns := range namespaceList.Items {
-			namespaces[ns.GetName()] = true
-		}
-
-		newPodItems := []corev1.Pod{}
-
-		for _, pod := range podList.Items {
-			if !namespaces[pod.GetNamespace()] {
-				continue
+		fmt.Println("Error Marshalling JSON")
+		fmt.Println(err)
+	} else {
+		if outputType == JSONOutput {
+			fmt.Printf("%s", jsonRaw)
+		} else {
+			// This is a strange approach, but the k8s YAML package
+			// already marshalls to JSON before converting to YAML,
+			// this just allows us to follow the same code path.
+			yamlRaw, err := yaml.JSONToYAML(jsonRaw)
+			if err != nil {
+				fmt.Println("Error Converting JSON to Yaml")
+				fmt.Println(err)
+			} else {
+				fmt.Printf("%s", yamlRaw)
 			}
-
-			newPodItems = append(newPodItems, pod)
 		}
-
-		podList.Items = newPodItems
 	}
-
-	return podList, nodeList
 }
 
-func getMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
-	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
-	if err != nil {
-		fmt.Printf("Error getting Pod Metrics: %v\n", err)
-		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
-		os.Exit(6)
+func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
+	var response listClusterMetrics
+
+	response.ClusterTotals.CPU = lp.buildListResourceOutput(lp.cm.cpu)
+	response.ClusterTotals.Memory = lp.buildListResourceOutput(lp.cm.memory)
+
+	for key, val := range lp.cm.nodeMetrics {
+		var node listNodeMetric
+		node.Name = key
+		node.CPU = lp.buildListResourceOutput(val.cpu)
+		node.Memory = lp.buildListResourceOutput(val.memory)
+		if lp.showPods {
+			for _, val := range val.podMetrics {
+				var newNode listPod
+				newNode.Name = val.name
+				newNode.Namespace = val.namespace
+				newNode.CPU = lp.buildListResourceOutput(val.cpu)
+				newNode.Memory = lp.buildListResourceOutput(val.memory)
+				node.Pods = append(node.Pods, &newNode)
+			}
+		}
+		response.Nodes = append(response.Nodes, &node)
 	}
 
-	return pmList
+	return response
 }
 
-func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList, nodeList *corev1.NodeList) clusterMetric {
-	cm := clusterMetric{
-		cpu:         &resourceMetric{resourceType: "cpu"},
-		memory:      &resourceMetric{resourceType: "memory"},
-		nodeMetrics: map[string]*nodeMetric{},
-		podMetrics:  map[string]*podMetric{},
+func (lp *listPrinter) buildListResourceOutput(item *resourceMetric) *listResourceOutput {
+	valueCalculator := item.valueFunction()
+	percentCalculator := item.percentFunction()
+
+	out := listResourceOutput{
+		Requests:    valueCalculator(item.request),
+		RequestsPct: percentCalculator(item.request),
+		Limits:      valueCalculator(item.limit),
+		LimitsPct:   percentCalculator(item.limit),
 	}
 
-	for _, node := range nodeList.Items {
-		cm.nodeMetrics[node.Name] = &nodeMetric{
-			cpu: &resourceMetric{
-				resourceType: "cpu",
-				allocatable:  node.Status.Allocatable["cpu"],
-			},
-			memory: &resourceMetric{
-				resourceType: "memory",
-				allocatable:  node.Status.Allocatable["memory"],
-			},
-			podMetrics: map[string]*podMetric{},
-		}
-
-		cm.cpu.allocatable.Add(node.Status.Allocatable["cpu"])
-		cm.memory.allocatable.Add(node.Status.Allocatable["memory"])
+	if lp.showUtil {
+		out.Utilization = valueCalculator(item.utilization)
+		out.UtilizationPct = percentCalculator(item.utilization)
 	}
-
-	podMetrics := map[string]v1beta1.PodMetrics{}
-	for _, pm := range pmList.Items {
-		podMetrics[fmt.Sprintf("%s-%s", pm.GetNamespace(), pm.GetName())] = pm
-	}
-
-	for _, pod := range podList.Items {
-		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
-			cm.addPodMetric(&pod, podMetrics[fmt.Sprintf("%s-%s", pod.GetNamespace(), pod.GetName())])
-		}
-	}
-
-	return cm
+	return &out
 }
