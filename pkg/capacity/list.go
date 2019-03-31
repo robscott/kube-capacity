@@ -28,7 +28,7 @@ import (
 )
 
 // List gathers cluster resource data and outputs it
-func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeContext string) {
+func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeContext string, output string) {
 	clientset, err := kube.NewClientSet(kubeContext)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
@@ -47,7 +47,7 @@ func List(showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeC
 		pmList = getMetrics(mClientset)
 	}
 	cm := buildClusterMetric(podList, pmList, nodeList)
-	printList(&cm, showPods, showUtil)
+	printList(&cm, showPods, showUtil, output)
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels string) (*corev1.PodList, *corev1.NodeList) {

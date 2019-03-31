@@ -18,9 +18,9 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	resourcehelper "k8s.io/kubernetes/pkg/kubectl/util/resource"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type resourceMetric struct {
@@ -137,4 +137,27 @@ func resourceString(actual, allocatable resource.Quantity, resourceType string) 
 		return fmt.Sprintf("%dm (%d%%)", actual.MilliValue(), int64(utilPercent))
 	}
 	return fmt.Sprintf("%dMi (%d%%)", actual.Value()/1048576, int64(utilPercent))
+}
+
+// NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.
+func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
+	switch rm.resourceType {
+	case "cpu":
+		f = func(r resource.Quantity) string {
+			return fmt.Sprintf("%dm", r.MilliValue())
+		}
+	case "memory":
+		f = func(r resource.Quantity) string {
+			return fmt.Sprintf("%dMi", r.Value()/1048576)
+		}
+	}
+	return f
+}
+
+// NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.
+func (rm resourceMetric) percentFunction() (f func(r resource.Quantity) string) {
+	f = func(r resource.Quantity) string {
+		return fmt.Sprintf("%v%%", int64(float64(r.MilliValue())/float64(rm.allocatable.MilliValue())*100))
+	}
+	return f
 }
