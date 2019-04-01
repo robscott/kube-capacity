@@ -45,10 +45,17 @@ type nodeMetric struct {
 }
 
 type podMetric struct {
-	name      string
-	namespace string
-	cpu       *resourceMetric
-	memory    *resourceMetric
+	name       string
+	namespace  string
+	cpu        *resourceMetric
+	memory     *resourceMetric
+	containers []containerMetric
+}
+
+type containerMetric struct {
+	name   string
+	cpu    *resourceMetric
+	memory *resourceMetric
 }
 
 func (rm *resourceMetric) addMetric(m *resourceMetric) {
@@ -75,7 +82,25 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 			request:      req["memory"],
 			limit:        limit["memory"],
 		},
+		containers: []containerMetric{},
 	}
+
+	for _, container := range pod.Spec.Containers {
+		pm.containers = append(pm.containers, containerMetric{
+			name: container.Name,
+			cpu: &resourceMetric{
+				resourceType: "cpu",
+				request:      container.Resources.Requests["cpu"],
+				limit:        container.Resources.Limits["cpu"],
+			},
+			memory: &resourceMetric{
+				resourceType: "memory",
+				request:      container.Resources.Requests["memory"],
+				limit:        container.Resources.Limits["memory"],
+			},
+		})
+	}
+
 	cm.podMetrics[key] = pm
 
 	nm := cm.nodeMetrics[pod.Spec.NodeName]

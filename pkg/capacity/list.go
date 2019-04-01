@@ -29,10 +29,17 @@ type listNodeMetric struct {
 }
 
 type listPod struct {
-	Name      string              `json:"name"`
-	Namespace string              `json:"namespace"`
-	CPU       *listResourceOutput `json:"cpu"`
-	Memory    *listResourceOutput `json:"memory"`
+	Name       string              `json:"name"`
+	Namespace  string              `json:"namespace"`
+	CPU        *listResourceOutput `json:"cpu"`
+	Memory     *listResourceOutput `json:"memory"`
+	Containers []listContainer     `json:"containers"`
+}
+
+type listContainer struct {
+	Name   string              `json:"name"`
+	CPU    *listResourceOutput `json:"cpu"`
+	Memory *listResourceOutput `json:"memory"`
 }
 
 type listResourceOutput struct {
@@ -53,9 +60,10 @@ type listClusterMetrics struct {
 }
 
 type listPrinter struct {
-	cm       *clusterMetric
-	showPods bool
-	showUtil bool
+	cm             *clusterMetric
+	showPods       bool
+	showContainers bool
+	showUtil       bool
 }
 
 func (lp listPrinter) Print(outputType string) {
@@ -89,19 +97,30 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 	response.ClusterTotals.CPU = lp.buildListResourceOutput(lp.cm.cpu)
 	response.ClusterTotals.Memory = lp.buildListResourceOutput(lp.cm.memory)
 
-	for key, val := range lp.cm.nodeMetrics {
+	for key, nodeMetric := range lp.cm.nodeMetrics {
 		var node listNodeMetric
 		node.Name = key
-		node.CPU = lp.buildListResourceOutput(val.cpu)
-		node.Memory = lp.buildListResourceOutput(val.memory)
-		if lp.showPods {
-			for _, val := range val.podMetrics {
-				var newNode listPod
-				newNode.Name = val.name
-				newNode.Namespace = val.namespace
-				newNode.CPU = lp.buildListResourceOutput(val.cpu)
-				newNode.Memory = lp.buildListResourceOutput(val.memory)
-				node.Pods = append(node.Pods, &newNode)
+		node.CPU = lp.buildListResourceOutput(nodeMetric.cpu)
+		node.Memory = lp.buildListResourceOutput(nodeMetric.memory)
+
+		if lp.showPods || lp.showContainers {
+			for _, podMetric := range nodeMetric.podMetrics {
+				var pod listPod
+				pod.Name = podMetric.name
+				pod.Namespace = podMetric.namespace
+				pod.CPU = lp.buildListResourceOutput(podMetric.cpu)
+				pod.Memory = lp.buildListResourceOutput(podMetric.memory)
+
+				if lp.showContainers {
+					for _, containerMetric := range podMetric.containers {
+						pod.Containers = append(pod.Containers, listContainer{
+							Name:   containerMetric.name,
+							Memory: lp.buildListResourceOutput(containerMetric.memory),
+							CPU:    lp.buildListResourceOutput(containerMetric.cpu),
+						})
+					}
+				}
+				node.Pods = append(node.Pods, &pod)
 			}
 		}
 		response.Nodes = append(response.Nodes, &node)

@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var showContainers bool
 var showPods bool
 var showUtil bool
 var podLabels string
@@ -44,11 +45,12 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat)
+		capacity.FetchAndPrint(showContainers, showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat)
 	},
 }
 
 func init() {
+	rootCmd.PersistentFlags().BoolVarP(&showContainers, "containers", "c", false, "includes containers in output")
 	rootCmd.PersistentFlags().BoolVarP(&showPods, "pods", "p", false, "includes pods in output")
 	rootCmd.PersistentFlags().BoolVarP(&showUtil, "util", "u", false, "includes resource utilization in output")
 	rootCmd.PersistentFlags().StringVarP(&podLabels, "pod-labels", "l", "", "labels to filter pods with")

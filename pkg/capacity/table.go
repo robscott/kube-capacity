@@ -22,10 +22,11 @@ import (
 )
 
 type tablePrinter struct {
-	cm       *clusterMetric
-	showPods bool
-	showUtil bool
-	w        *tabwriter.Writer
+	cm             *clusterMetric
+	showPods       bool
+	showUtil       bool
+	showContainers bool
+	w              *tabwriter.Writer
 }
 
 func (tp *tablePrinter) Print() {
@@ -49,7 +50,33 @@ func (tp *tablePrinter) Print() {
 }
 
 func (tp *tablePrinter) printHeaders() {
-	if tp.showPods && tp.showUtil {
+	if tp.showContainers && tp.showUtil {
+		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CONTAINER \t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
+
+		if len(tp.cm.nodeMetrics) > 1 {
+			fmt.Fprintf(tp.w, "* \t *\t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
+				tp.cm.cpu.requestString(),
+				tp.cm.cpu.limitString(),
+				tp.cm.cpu.utilString(),
+				tp.cm.memory.requestString(),
+				tp.cm.memory.limitString(),
+				tp.cm.memory.utilString())
+
+			fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t\t")
+		}
+
+	} else if tp.showContainers && tp.showUtil {
+		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CONTAINER\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
+
+		fmt.Fprintf(tp.w, "* \t *\t *\t *\t %s \t %s \t %s \t %s \n",
+			tp.cm.cpu.requestString(),
+			tp.cm.cpu.limitString(),
+			tp.cm.memory.requestString(),
+			tp.cm.memory.limitString())
+
+		fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t")
+
+	} else if tp.showPods && tp.showUtil {
 		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
 
 		if len(tp.cm.nodeMetrics) > 1 {
@@ -63,6 +90,7 @@ func (tp *tablePrinter) printHeaders() {
 
 			fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t")
 		}
+
 	} else if tp.showPods {
 		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
 
@@ -106,7 +134,33 @@ func (tp *tablePrinter) printNode(name string, nm *nodeMetric) {
 	}
 	sort.Strings(podNames)
 
-	if tp.showPods && tp.showUtil {
+	if tp.showContainers && tp.showUtil {
+		fmt.Fprintf(tp.w, "%s \t *\t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
+			name,
+			nm.cpu.requestString(),
+			nm.cpu.limitString(),
+			nm.cpu.utilString(),
+			nm.memory.requestString(),
+			nm.memory.limitString(),
+			nm.memory.utilString())
+
+		for _, podName := range podNames {
+			pm := nm.podMetrics[podName]
+			fmt.Fprintf(tp.w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n",
+				name,
+				pm.namespace,
+				pm.name,
+				pm.cpu.requestString(),
+				pm.cpu.limitString(),
+				pm.cpu.utilString(),
+				pm.memory.requestString(),
+				pm.memory.limitString(),
+				pm.memory.utilString())
+		}
+
+		fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t")
+
+	} else if tp.showPods && tp.showUtil {
 		fmt.Fprintf(tp.w, "%s \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
 			name,
 			nm.cpu.requestString(),
