@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -29,198 +30,177 @@ type tablePrinter struct {
 	w              *tabwriter.Writer
 }
 
+type tableLine struct {
+	node           string
+	namespace      string
+	pod            string
+	container      string
+	cpuRequests    string
+	cpuLimits      string
+	cpuUtil        string
+	memoryRequests string
+	memoryLimits   string
+	memoryUtil     string
+}
+
+var headerStrings = tableLine{
+	node:           "NODE",
+	namespace:      "NAMESPACE",
+	pod:            "POD",
+	container:      "CONTAINER",
+	cpuRequests:    "CPU REQUESTS",
+	cpuLimits:      "CPU LIMITS",
+	cpuUtil:        "CPU UTIL",
+	memoryRequests: "MEMORY REQUESTS",
+	memoryLimits:   "MEMORY LIMITS",
+	memoryUtil:     "MEMORY UTIL",
+}
+
 func (tp *tablePrinter) Print() {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
-	names := make([]string, len(tp.cm.nodeMetrics))
+	nodeNames := getSortedNodeNames(tp.cm.nodeMetrics)
 
-	i := 0
-	for name := range tp.cm.nodeMetrics {
-		names[i] = name
-		i++
+	tp.printLine(&headerStrings)
+
+	if len(nodeNames) > 1 {
+		tp.printClusterLine()
+		tp.printLine(&tableLine{})
 	}
-	sort.Strings(names)
 
-	tp.printHeaders()
+	for _, nodeName := range nodeNames {
+		nm := tp.cm.nodeMetrics[nodeName]
+		tp.printNodeLine(nodeName, nm)
+		tp.printLine(&tableLine{})
 
-	for _, name := range names {
-		tp.printNode(name, tp.cm.nodeMetrics[name])
+		podNames := getSortedPodNames(nm.podMetrics)
+		if tp.showPods || tp.showContainers {
+			for _, podName := range podNames {
+				pm := nm.podMetrics[podName]
+				tp.printPodLine(nodeName, pm)
+				if tp.showContainers {
+					for _, containerMetric := range pm.containers {
+						tp.printContainerLine(nodeName, pm, containerMetric)
+					}
+				}
+			}
+		}
 	}
 
 	tp.w.Flush()
 }
 
-func (tp *tablePrinter) printHeaders() {
-	if tp.showContainers && tp.showUtil {
-		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CONTAINER \t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
+func (tp *tablePrinter) printLine(tl *tableLine) {
+	lineItems := []string{tl.node, tl.namespace}
 
-		if len(tp.cm.nodeMetrics) > 1 {
-			fmt.Fprintf(tp.w, "* \t *\t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
-				tp.cm.cpu.requestString(),
-				tp.cm.cpu.limitString(),
-				tp.cm.cpu.utilString(),
-				tp.cm.memory.requestString(),
-				tp.cm.memory.limitString(),
-				tp.cm.memory.utilString())
-
-			fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t\t")
-		}
-
-	} else if tp.showContainers && tp.showUtil {
-		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CONTAINER\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
-
-		fmt.Fprintf(tp.w, "* \t *\t *\t *\t %s \t %s \t %s \t %s \n",
-			tp.cm.cpu.requestString(),
-			tp.cm.cpu.limitString(),
-			tp.cm.memory.requestString(),
-			tp.cm.memory.limitString())
-
-		fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t")
-
-	} else if tp.showPods && tp.showUtil {
-		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
-
-		if len(tp.cm.nodeMetrics) > 1 {
-			fmt.Fprintf(tp.w, "* \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
-				tp.cm.cpu.requestString(),
-				tp.cm.cpu.limitString(),
-				tp.cm.cpu.utilString(),
-				tp.cm.memory.requestString(),
-				tp.cm.memory.limitString(),
-				tp.cm.memory.utilString())
-
-			fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t")
-		}
-
-	} else if tp.showPods {
-		fmt.Fprintln(tp.w, "NODE\t NAMESPACE\t POD\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
-
-		fmt.Fprintf(tp.w, "* \t *\t *\t %s \t %s \t %s \t %s \n",
-			tp.cm.cpu.requestString(),
-			tp.cm.cpu.limitString(),
-			tp.cm.memory.requestString(),
-			tp.cm.memory.limitString())
-
-		fmt.Fprintln(tp.w, "\t\t\t\t\t\t")
-
-	} else if tp.showUtil {
-		fmt.Fprintln(tp.w, "NODE\t CPU REQUESTS \t CPU LIMITS \t CPU UTIL \t MEMORY REQUESTS \t MEMORY LIMITS \t MEMORY UTIL")
-
-		fmt.Fprintf(tp.w, "* \t %s \t %s \t %s \t %s \t %s \t %s \n",
-			tp.cm.cpu.requestString(),
-			tp.cm.cpu.limitString(),
-			tp.cm.cpu.utilString(),
-			tp.cm.memory.requestString(),
-			tp.cm.memory.limitString(),
-			tp.cm.memory.utilString())
-
-	} else {
-		fmt.Fprintln(tp.w, "NODE\t CPU REQUESTS \t CPU LIMITS \t MEMORY REQUESTS \t MEMORY LIMITS")
-
-		if len(tp.cm.nodeMetrics) > 1 {
-			fmt.Fprintf(tp.w, "* \t %s \t %s \t %s \t %s \n",
-				tp.cm.cpu.requestString(), tp.cm.cpu.limitString(),
-				tp.cm.memory.requestString(), tp.cm.memory.limitString())
-		}
+	if tp.showContainers || tp.showPods {
+		lineItems = append(lineItems, tl.pod)
 	}
+
+	if tp.showContainers {
+		lineItems = append(lineItems, tl.container)
+	}
+
+	lineItems = append(lineItems, tl.cpuRequests)
+	lineItems = append(lineItems, tl.cpuLimits)
+
+	if tp.showUtil {
+		lineItems = append(lineItems, tl.cpuUtil)
+	}
+
+	lineItems = append(lineItems, tl.memoryRequests)
+	lineItems = append(lineItems, tl.memoryLimits)
+
+	if tp.showUtil {
+		lineItems = append(lineItems, tl.memoryUtil)
+	}
+
+	fmt.Fprintf(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
 }
 
-func (tp *tablePrinter) printNode(name string, nm *nodeMetric) {
-	podNames := make([]string, len(nm.podMetrics))
+func (tp *tablePrinter) printClusterLine() {
+	tp.printLine(&tableLine{
+		node:           "*",
+		namespace:      "*",
+		pod:            "*",
+		container:      "*",
+		cpuRequests:    tp.cm.cpu.requestString(),
+		cpuLimits:      tp.cm.cpu.limitString(),
+		cpuUtil:        tp.cm.cpu.utilString(),
+		memoryRequests: tp.cm.memory.requestString(),
+		memoryLimits:   tp.cm.memory.limitString(),
+		memoryUtil:     tp.cm.memory.utilString(),
+	})
+}
+
+func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
+	tp.printLine(&tableLine{
+		node:           nodeName,
+		namespace:      "*",
+		pod:            "*",
+		container:      "*",
+		cpuRequests:    nm.cpu.requestString(),
+		cpuLimits:      nm.cpu.limitString(),
+		cpuUtil:        nm.cpu.utilString(),
+		memoryRequests: nm.memory.requestString(),
+		memoryLimits:   nm.memory.limitString(),
+		memoryUtil:     nm.memory.utilString(),
+	})
+}
+
+func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
+	tp.printLine(&tableLine{
+		node:           nodeName,
+		namespace:      pm.namespace,
+		pod:            pm.name,
+		container:      "*",
+		cpuRequests:    pm.cpu.requestString(),
+		cpuLimits:      pm.cpu.limitString(),
+		cpuUtil:        pm.cpu.utilString(),
+		memoryRequests: pm.memory.requestString(),
+		memoryLimits:   pm.memory.limitString(),
+		memoryUtil:     pm.memory.utilString(),
+	})
+}
+
+func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
+	tp.printLine(&tableLine{
+		node:           nodeName,
+		namespace:      pm.namespace,
+		pod:            pm.name,
+		container:      cm.name,
+		cpuRequests:    cm.cpu.requestString(),
+		cpuLimits:      cm.cpu.limitString(),
+		cpuUtil:        "",
+		memoryRequests: cm.memory.requestString(),
+		memoryLimits:   cm.memory.limitString(),
+		memoryUtil:     "",
+	})
+}
+
+func getSortedNodeNames(nodeMetrics map[string]*nodeMetric) []string {
+	sortedNames := make([]string, len(nodeMetrics))
 
 	i := 0
-	for name := range nm.podMetrics {
-		podNames[i] = name
+	for name := range nodeMetrics {
+		sortedNames[i] = name
 		i++
 	}
-	sort.Strings(podNames)
 
-	if tp.showContainers && tp.showUtil {
-		fmt.Fprintf(tp.w, "%s \t *\t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.cpu.utilString(),
-			nm.memory.requestString(),
-			nm.memory.limitString(),
-			nm.memory.utilString())
+	sort.Strings(sortedNames)
 
-		for _, podName := range podNames {
-			pm := nm.podMetrics[podName]
-			fmt.Fprintf(tp.w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-				name,
-				pm.namespace,
-				pm.name,
-				pm.cpu.requestString(),
-				pm.cpu.limitString(),
-				pm.cpu.utilString(),
-				pm.memory.requestString(),
-				pm.memory.limitString(),
-				pm.memory.utilString())
-		}
+	return sortedNames
+}
 
-		fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t")
+func getSortedPodNames(podMetrics map[string]*podMetric) []string {
+	sortedNames := make([]string, len(podMetrics))
 
-	} else if tp.showPods && tp.showUtil {
-		fmt.Fprintf(tp.w, "%s \t *\t *\t %s \t %s \t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.cpu.utilString(),
-			nm.memory.requestString(),
-			nm.memory.limitString(),
-			nm.memory.utilString())
-
-		for _, podName := range podNames {
-			pm := nm.podMetrics[podName]
-			fmt.Fprintf(tp.w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-				name,
-				pm.namespace,
-				pm.name,
-				pm.cpu.requestString(),
-				pm.cpu.limitString(),
-				pm.cpu.utilString(),
-				pm.memory.requestString(),
-				pm.memory.limitString(),
-				pm.memory.utilString())
-		}
-
-		fmt.Fprintln(tp.w, "\t\t\t\t\t\t\t\t")
-
-	} else if tp.showPods {
-		fmt.Fprintf(tp.w, "%s \t *\t *\t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.memory.requestString(),
-			nm.memory.limitString())
-
-		for _, podName := range podNames {
-			pm := nm.podMetrics[podName]
-			fmt.Fprintf(tp.w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-				name,
-				pm.namespace,
-				pm.name,
-				pm.cpu.requestString(),
-				pm.cpu.limitString(),
-				pm.memory.requestString(),
-				pm.memory.limitString())
-		}
-
-		fmt.Fprintln(tp.w, "\t\t\t\t\t\t")
-
-	} else if tp.showUtil {
-		fmt.Fprintf(tp.w, "%s \t %s \t %s \t %s \t %s \t %s \t %s \n",
-			name,
-			nm.cpu.requestString(),
-			nm.cpu.limitString(),
-			nm.cpu.utilString(),
-			nm.memory.requestString(),
-			nm.memory.limitString(),
-			nm.memory.utilString())
-
-	} else {
-		fmt.Fprintf(tp.w, "%s \t %s \t %s \t %s \t %s \n", name,
-			nm.cpu.requestString(), nm.cpu.limitString(),
-			nm.memory.requestString(), nm.memory.limitString())
+	i := 0
+	for name := range podMetrics {
+		sortedNames[i] = name
+		i++
 	}
+
+	sort.Strings(sortedNames)
+
+	return sortedNames
 }

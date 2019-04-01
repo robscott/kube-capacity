@@ -49,7 +49,7 @@ type podMetric struct {
 	namespace  string
 	cpu        *resourceMetric
 	memory     *resourceMetric
-	containers []containerMetric
+	containers []*containerMetric
 }
 
 type containerMetric struct {
@@ -82,11 +82,11 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 			request:      req["memory"],
 			limit:        limit["memory"],
 		},
-		containers: []containerMetric{},
+		containers: []*containerMetric{},
 	}
 
 	for _, container := range pod.Spec.Containers {
-		pm.containers = append(pm.containers, containerMetric{
+		pm.containers = append(pm.containers, &containerMetric{
 			name: container.Name,
 			cpu: &resourceMetric{
 				resourceType: "cpu",
@@ -159,9 +159,10 @@ func resourceString(actual, allocatable resource.Quantity, resourceType string) 
 	}
 
 	if resourceType == "cpu" {
-		return fmt.Sprintf("%dm (%d%%)", actual.MilliValue(), int64(utilPercent))
+		return fmt.Sprintf("%dm (%d", actual.MilliValue(), int64(utilPercent)) + "%%)"
 	}
-	return fmt.Sprintf("%dMi (%d%%)", actual.Value()/1048576, int64(utilPercent))
+
+	return fmt.Sprintf("%dMi (%d", actual.Value()/1048576, int64(utilPercent)) + "%%)"
 }
 
 // NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.
