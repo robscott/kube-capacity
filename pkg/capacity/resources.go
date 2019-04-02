@@ -49,7 +49,7 @@ type podMetric struct {
 	namespace  string
 	cpu        *resourceMetric
 	memory     *resourceMetric
-	containers []*containerMetric
+	containers map[string]*containerMetric
 }
 
 type containerMetric struct {
@@ -68,6 +68,7 @@ func (rm *resourceMetric) addMetric(m *resourceMetric) {
 func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMetrics) {
 	req, limit := resourcehelper.PodRequestsAndLimits(pod)
 	key := fmt.Sprintf("%s-%s", pod.Namespace, pod.Name)
+	nm := cm.nodeMetrics[pod.Spec.NodeName]
 
 	pm := &podMetric{
 		name:      pod.Name,
@@ -82,28 +83,29 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 			request:      req["memory"],
 			limit:        limit["memory"],
 		},
-		containers: []*containerMetric{},
+		containers: map[string]*containerMetric{},
 	}
 
 	for _, container := range pod.Spec.Containers {
-		pm.containers = append(pm.containers, &containerMetric{
+		pm.containers[container.Name] = &containerMetric{
 			name: container.Name,
 			cpu: &resourceMetric{
 				resourceType: "cpu",
 				request:      container.Resources.Requests["cpu"],
 				limit:        container.Resources.Limits["cpu"],
+				allocatable:  nm.cpu.allocatable,
 			},
 			memory: &resourceMetric{
 				resourceType: "memory",
 				request:      container.Resources.Requests["memory"],
 				limit:        container.Resources.Limits["memory"],
+				allocatable:  nm.memory.allocatable,
 			},
-		})
+		}
 	}
 
 	cm.podMetrics[key] = pm
 
-	nm := cm.nodeMetrics[pod.Spec.NodeName]
 	if nm != nil {
 		cm.cpu.request.Add(req["cpu"])
 		cm.cpu.limit.Add(limit["cpu"])
@@ -113,6 +115,7 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 		cm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
 		cm.podMetrics[key].memory.allocatable = nm.memory.allocatable
 		nm.podMetrics[key] = cm.podMetrics[key]
+
 		nm.cpu.request.Add(req["cpu"])
 		nm.cpu.limit.Add(limit["cpu"])
 		nm.memory.request.Add(req["memory"])
@@ -120,7 +123,9 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 	}
 
 	for _, container := range podMetrics.Containers {
+		pm.containers[container.Name].cpu.utilization = container.Usage["cpu"]
 		pm.cpu.utilization.Add(container.Usage["cpu"])
+		pm.containers[container.Name].memory.utilization = container.Usage["memory"]
 		pm.memory.utilization.Add(container.Usage["memory"])
 
 		if nm == nil {

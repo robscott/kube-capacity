@@ -170,10 +170,10 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		container:      cm.name,
 		cpuRequests:    cm.cpu.requestString(),
 		cpuLimits:      cm.cpu.limitString(),
-		cpuUtil:        "",
+		cpuUtil:        cm.cpu.utilString(),
 		memoryRequests: cm.memory.requestString(),
 		memoryLimits:   cm.memory.limitString(),
-		memoryUtil:     "",
+		memoryUtil:     cm.memory.utilString(),
 	})
 }
 
