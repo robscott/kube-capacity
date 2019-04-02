@@ -52,11 +52,13 @@ type listResourceOutput struct {
 }
 
 type listClusterMetrics struct {
-	Nodes         []*listNodeMetric `json:"nodes"`
-	ClusterTotals struct {
-		CPU    *listResourceOutput `json:"cpu"`
-		Memory *listResourceOutput `json:"memory"`
-	} `json:"cluster_totals"`
+	Nodes         []*listNodeMetric  `json:"nodes"`
+	ClusterTotals *listClusterTotals `json:"cluster_totals"`
+}
+
+type listClusterTotals struct {
+	CPU    *listResourceOutput `json:"cpu"`
+	Memory *listResourceOutput `json:"memory"`
 }
 
 type listPrinter struct {
@@ -94,8 +96,10 @@ func (lp listPrinter) Print(outputType string) {
 func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 	var response listClusterMetrics
 
-	response.ClusterTotals.CPU = lp.buildListResourceOutput(lp.cm.cpu)
-	response.ClusterTotals.Memory = lp.buildListResourceOutput(lp.cm.memory)
+	response.ClusterTotals = &listClusterTotals{
+		CPU:    lp.buildListResourceOutput(lp.cm.cpu),
+		Memory: lp.buildListResourceOutput(lp.cm.memory),
+	}
 
 	for key, nodeMetric := range lp.cm.nodeMetrics {
 		var node listNodeMetric
