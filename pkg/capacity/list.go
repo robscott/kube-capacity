@@ -66,6 +66,7 @@ type listPrinter struct {
 	showPods       bool
 	showContainers bool
 	showUtil       bool
+	sortBy         string
 }
 
 func (lp listPrinter) Print(outputType string) {
@@ -101,14 +102,14 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 		Memory: lp.buildListResourceOutput(lp.cm.memory),
 	}
 
-	for key, nodeMetric := range lp.cm.nodeMetrics {
+	for _, nodeMetric := range lp.cm.getSortedNodeMetrics(lp.sortBy) {
 		var node listNodeMetric
-		node.Name = key
+		node.Name = nodeMetric.name
 		node.CPU = lp.buildListResourceOutput(nodeMetric.cpu)
 		node.Memory = lp.buildListResourceOutput(nodeMetric.memory)
 
 		if lp.showPods || lp.showContainers {
-			for _, podMetric := range nodeMetric.podMetrics {
+			for _, podMetric := range nodeMetric.getSortedPodMetrics(lp.sortBy) {
 				var pod listPod
 				pod.Name = podMetric.name
 				pod.Namespace = podMetric.namespace
@@ -116,7 +117,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 				pod.Memory = lp.buildListResourceOutput(podMetric.memory)
 
 				if lp.showContainers {
-					for _, containerMetric := range podMetric.containers {
+					for _, containerMetric := range podMetric.getSortedContainerMetrics(lp.sortBy) {
 						pod.Containers = append(pod.Containers, listContainer{
 							Name:   containerMetric.name,
 							Memory: lp.buildListResourceOutput(containerMetric.memory),

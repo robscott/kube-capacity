@@ -30,6 +30,7 @@ var nodeLabels string
 var namespaceLabels string
 var kubeContext string
 var outputFormat string
+var sortBy string
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -45,19 +46,32 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(showContainers, showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat)
+		capacity.FetchAndPrint(showContainers, showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat, sortBy)
 	},
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&showContainers, "containers", "c", false, "includes containers in output")
-	rootCmd.PersistentFlags().BoolVarP(&showPods, "pods", "p", false, "includes pods in output")
-	rootCmd.PersistentFlags().BoolVarP(&showUtil, "util", "u", false, "includes resource utilization in output")
-	rootCmd.PersistentFlags().StringVarP(&podLabels, "pod-labels", "l", "", "labels to filter pods with")
-	rootCmd.PersistentFlags().StringVarP(&nodeLabels, "node-labels", "", "", "labels to filter nodes with")
-	rootCmd.PersistentFlags().StringVarP(&namespaceLabels, "namespace-labels", "n", "", "labels to filter namespaces with")
-	rootCmd.PersistentFlags().StringVarP(&kubeContext, "context", "", "", "context to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", capacity.TableOutput, fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
+	rootCmd.PersistentFlags().BoolVarP(&showContainers,
+		"containers", "c", false, "includes containers in output")
+	rootCmd.PersistentFlags().BoolVarP(&showPods,
+		"pods", "p", false, "includes pods in output")
+	rootCmd.PersistentFlags().BoolVarP(&showUtil,
+		"util", "u", false, "includes resource utilization in output")
+	rootCmd.PersistentFlags().StringVarP(&podLabels,
+		"pod-labels", "l", "", "labels to filter pods with")
+	rootCmd.PersistentFlags().StringVarP(&nodeLabels,
+		"node-labels", "", "", "labels to filter nodes with")
+	rootCmd.PersistentFlags().StringVarP(&namespaceLabels,
+		"namespace-labels", "n", "", "labels to filter namespaces with")
+	rootCmd.PersistentFlags().StringVarP(&kubeContext,
+		"context", "", "", "context to use for Kubernetes config")
+	rootCmd.PersistentFlags().StringVarP(&sortBy,
+		"sort", "", "name",
+		fmt.Sprintf("attribute to sort results be (supports: %v)", capacity.SupportedSortAttributes))
+
+	rootCmd.PersistentFlags().StringVarP(&outputFormat,
+		"output", "o", capacity.TableOutput,
+		fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
 }
 
 // Execute is the primary entrypoint for this CLI

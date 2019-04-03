@@ -49,7 +49,6 @@ func TestBuildClusterMetricEmpty(t *testing.T) {
 			utilization:  resource.Quantity{},
 		},
 		nodeMetrics: map[string]*nodeMetric{},
-		podMetrics:  map[string]*podMetric{},
 	}
 
 	assert.EqualValues(t, cm, expected)
@@ -149,8 +148,6 @@ func TestBuildClusterMetricFull(t *testing.T) {
 		utilization: resource.MustParse("299Mi"),
 	}
 
-	assert.Len(t, cm.podMetrics, 1)
-
 	assert.NotNil(t, cm.cpu)
 	ensureEqualResourceMetric(t, cm.cpu, cpuExpected)
 	assert.NotNil(t, cm.memory)
@@ -162,15 +159,18 @@ func TestBuildClusterMetricFull(t *testing.T) {
 	assert.NotNil(t, cm.nodeMetrics["example-node-1"].memory)
 	ensureEqualResourceMetric(t, cm.nodeMetrics["example-node-1"].memory, memoryExpected)
 
+	assert.Len(t, cm.nodeMetrics["example-node-1"].podMetrics, 1)
+
+	pm := cm.nodeMetrics["example-node-1"].podMetrics
 	// Change to pod specific util numbers
 	cpuExpected.utilization = resource.MustParse("23m")
 	memoryExpected.utilization = resource.MustParse("299Mi")
 
-	assert.NotNil(t, cm.podMetrics["default-example-pod"])
-	assert.NotNil(t, cm.podMetrics["default-example-pod"].cpu)
-	ensureEqualResourceMetric(t, cm.podMetrics["default-example-pod"].cpu, cpuExpected)
-	assert.NotNil(t, cm.podMetrics["default-example-pod"].memory)
-	ensureEqualResourceMetric(t, cm.podMetrics["default-example-pod"].memory, memoryExpected)
+	assert.NotNil(t, pm["default-example-pod"])
+	assert.NotNil(t, pm["default-example-pod"].cpu)
+	ensureEqualResourceMetric(t, pm["default-example-pod"].cpu, cpuExpected)
+	assert.NotNil(t, pm["default-example-pod"].memory)
+	ensureEqualResourceMetric(t, pm["default-example-pod"].memory, memoryExpected)
 }
 
 func ensureEqualResourceMetric(t *testing.T, actual *resourceMetric, expected *resourceMetric) {
@@ -203,11 +203,11 @@ func listPods(p *corev1.PodList) []string {
 func node(name string, labels map[string]string) *corev1.Node {
 	return &corev1.Node{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "Node",
+			Kind:       "Node",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
 			Labels: labels,
 		},
 	}
@@ -216,11 +216,11 @@ func node(name string, labels map[string]string) *corev1.Node {
 func namespace(name string, labels map[string]string) *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "Namespace",
+			Kind:       "Namespace",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
 			Labels: labels,
 		},
 	}
@@ -229,13 +229,13 @@ func namespace(name string, labels map[string]string) *corev1.Namespace {
 func pod(node, namespace, name string, labels map[string]string) *corev1.Pod {
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "Pod",
+			Kind:       "Pod",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
 			Namespace: namespace,
-			Labels: labels,
+			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
 			NodeName: node,
@@ -285,7 +285,6 @@ func TestGetPodsAndNodes(t *testing.T) {
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
-
 
 	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "app=true")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))

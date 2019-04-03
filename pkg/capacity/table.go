@@ -17,7 +17,6 @@ package capacity
 import (
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"text/tabwriter"
 )
@@ -27,6 +26,7 @@ type tablePrinter struct {
 	showPods       bool
 	showUtil       bool
 	showContainers bool
+	sortBy         string
 	w              *tabwriter.Writer
 }
 
@@ -58,28 +58,27 @@ var headerStrings = tableLine{
 
 func (tp *tablePrinter) Print() {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
-	nodeNames := getSortedNodeNames(tp.cm.nodeMetrics)
+	sortedNodeMetrics := tp.cm.getSortedNodeMetrics(tp.sortBy)
 
 	tp.printLine(&headerStrings)
 
-	if len(nodeNames) > 1 {
+	if len(sortedNodeMetrics) > 1 {
 		tp.printClusterLine()
 		tp.printLine(&tableLine{})
 	}
 
-	for _, nodeName := range nodeNames {
-		nm := tp.cm.nodeMetrics[nodeName]
-		tp.printNodeLine(nodeName, nm)
+	for _, nm := range sortedNodeMetrics {
+		tp.printNodeLine(nm.name, nm)
 		tp.printLine(&tableLine{})
 
-		podNames := getSortedPodNames(nm.podMetrics)
 		if tp.showPods || tp.showContainers {
-			for _, podName := range podNames {
-				pm := nm.podMetrics[podName]
-				tp.printPodLine(nodeName, pm)
+			podMetrics := nm.getSortedPodMetrics(tp.sortBy)
+			for _, pm := range podMetrics {
+				tp.printPodLine(nm.name, pm)
 				if tp.showContainers {
-					for _, containerMetric := range pm.containers {
-						tp.printContainerLine(nodeName, pm, containerMetric)
+					containerMetrics := pm.getSortedContainerMetrics(tp.sortBy)
+					for _, containerMetric := range containerMetrics {
+						tp.printContainerLine(nm.name, pm, containerMetric)
 					}
 				}
 			}
@@ -175,32 +174,4 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		memoryLimits:   cm.memory.limitString(),
 		memoryUtil:     cm.memory.utilString(),
 	})
-}
-
-func getSortedNodeNames(nodeMetrics map[string]*nodeMetric) []string {
-	sortedNames := make([]string, len(nodeMetrics))
-
-	i := 0
-	for name := range nodeMetrics {
-		sortedNames[i] = name
-		i++
-	}
-
-	sort.Strings(sortedNames)
-
-	return sortedNames
-}
-
-func getSortedPodNames(podMetrics map[string]*podMetric) []string {
-	sortedNames := make([]string, len(podMetrics))
-
-	i := 0
-	for name := range podMetrics {
-		sortedNames[i] = name
-		i++
-	}
-
-	sort.Strings(sortedNames)
-
-	return sortedNames
 }

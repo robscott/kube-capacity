@@ -28,7 +28,7 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(showContainers, showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeContext string, output string) {
+func FetchAndPrint(showContainers, showPods, showUtil bool, podLabels, nodeLabels, namespaceLabels, kubeContext, output, sortBy string) {
 	clientset, err := kube.NewClientSet(kubeContext)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
@@ -48,7 +48,7 @@ func FetchAndPrint(showContainers, showPods, showUtil bool, podLabels, nodeLabel
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList)
-	printList(&cm, showContainers, showPods, showUtil, output)
+	printList(&cm, showContainers, showPods, showUtil, output, sortBy)
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels string) (*corev1.PodList, *corev1.NodeList) {
@@ -124,43 +124,4 @@ func getMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
 	}
 
 	return pmList
-}
-
-func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList, nodeList *corev1.NodeList) clusterMetric {
-	cm := clusterMetric{
-		cpu:         &resourceMetric{resourceType: "cpu"},
-		memory:      &resourceMetric{resourceType: "memory"},
-		nodeMetrics: map[string]*nodeMetric{},
-		podMetrics:  map[string]*podMetric{},
-	}
-
-	for _, node := range nodeList.Items {
-		cm.nodeMetrics[node.Name] = &nodeMetric{
-			cpu: &resourceMetric{
-				resourceType: "cpu",
-				allocatable:  node.Status.Allocatable["cpu"],
-			},
-			memory: &resourceMetric{
-				resourceType: "memory",
-				allocatable:  node.Status.Allocatable["memory"],
-			},
-			podMetrics: map[string]*podMetric{},
-		}
-
-		cm.cpu.allocatable.Add(node.Status.Allocatable["cpu"])
-		cm.memory.allocatable.Add(node.Status.Allocatable["memory"])
-	}
-
-	podMetrics := map[string]v1beta1.PodMetrics{}
-	for _, pm := range pmList.Items {
-		podMetrics[fmt.Sprintf("%s-%s", pm.GetNamespace(), pm.GetName())] = pm
-	}
-
-	for _, pod := range podList.Items {
-		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
-			cm.addPodMetric(&pod, podMetrics[fmt.Sprintf("%s-%s", pod.GetNamespace(), pod.GetName())])
-		}
-	}
-
-	return cm
 }
