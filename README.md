@@ -110,9 +110,6 @@ kube-capacity --pods --output json
 kube-capacity --pods --containers --util --output yaml
 ```
 
-## Prerequisites
-Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
-
 ## Flags Supported
 ```
   -c, --containers                includes containers in output
@@ -130,6 +127,9 @@ Any commands requesting cluster utilization are dependent on [metrics-server](ht
                                     (default "name")
   -u, --util                      includes resource utilization in output
 ```
+
+## Prerequisites
+Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
 
 ## Similar Projects
 There are already some great projects out there that have similar goals.

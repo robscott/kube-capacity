@@ -89,9 +89,15 @@ func (tp *tablePrinter) Print() {
 }
 
 func (tp *tablePrinter) printLine(tl *tableLine) {
-	lineItems := []string{tl.node, tl.namespace}
+	lineItems := tp.getLineItems(tl)
+	fmt.Fprintf(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
+}
+
+func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
+	lineItems := []string{tl.node}
 
 	if tp.showContainers || tp.showPods {
+		lineItems = append(lineItems, tl.namespace)
 		lineItems = append(lineItems, tl.pod)
 	}
 
@@ -113,7 +119,7 @@ func (tp *tablePrinter) printLine(tl *tableLine) {
 		lineItems = append(lineItems, tl.memoryUtil)
 	}
 
-	fmt.Fprintf(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
+	return lineItems
 }
 
 func (tp *tablePrinter) printClusterLine() {
