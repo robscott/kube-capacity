@@ -5,11 +5,14 @@ jobs:
     working_directory: /go/src/github.com/robscott/kube-capacity
 
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
 
     steps:
       - checkout
-      - run: go test -v ./pkg/...
+      - run: go get -u golang.org/x/lint/golint
+      - run: go list ./... | grep -v vendor | xargs golint -set_exit_status
+      - run: go list ./... | grep -v vendor | xargs go vet
+      - run: go test ./pkg/... -v -coverprofile cover.out
 
 workflows:
   version: 2

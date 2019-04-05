@@ -1,4 +1,4 @@
-// Copyright 2019 Rob Scott
+// Copyright 2019 Kube Capacity Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ import (
 )
 
 const (
-	//TableOutput is the constant value for output type text
+	//TableOutput is the constant value for output type table
 	TableOutput string = "table"
-	//JSONOutput is the constant value for output type text
+	//JSONOutput is the constant value for output type JSON
 	JSONOutput string = "json"
+	//YAMLOutput is the constant value for output type YAML
+	YAMLOutput string = "yaml"
 )
 
 // SupportedOutputs returns a string list of output formats supposed by this package
@@ -32,41 +34,32 @@ func SupportedOutputs() []string {
 	return []string{
 		TableOutput,
 		JSONOutput,
+		YAMLOutput,
 	}
 }
 
-type printer interface {
-	Print()
-}
-
-func printList(cm *clusterMetric, showPods bool, showUtil bool, output string) {
-	p, err := printerFactory(cm, showPods, showUtil, output)
-	if err != nil {
-		fmt.Println(err)
+func printList(cm *clusterMetric, showContainers, showPods, showUtil bool, output, sortBy string) {
+	if output == JSONOutput || output == YAMLOutput {
+		lp := &listPrinter{
+			cm:             cm,
+			showPods:       showPods,
+			showUtil:       showUtil,
+			showContainers: showContainers,
+			sortBy:         sortBy,
+		}
+		lp.Print(output)
+	} else if output == TableOutput {
+		tp := &tablePrinter{
+			cm:             cm,
+			showPods:       showPods,
+			showUtil:       showUtil,
+			showContainers: showContainers,
+			sortBy:         sortBy,
+			w:              new(tabwriter.Writer),
+		}
+		tp.Print()
+	} else {
+		fmt.Printf("Called with an unsupported output type: %s", output)
 		os.Exit(1)
-	}
-	p.Print()
-}
-
-func printerFactory(cm *clusterMetric, showPods bool, showUtil bool, outputType string) (printer, error) {
-	var response printer
-	switch outputType {
-	case JSONOutput:
-		response = jsonPrinter{
-			cm:       cm,
-			showPods: showPods,
-			showUtil: showUtil,
-		}
-		return response, nil
-	case TableOutput:
-		response = tablePrinter{
-			cm:       cm,
-			showPods: showPods,
-			showUtil: showUtil,
-			w:        new(tabwriter.Writer),
-		}
-		return response, nil
-	default:
-		return response, fmt.Errorf("Called with an unsupported output type: %s", outputType)
 	}
 }

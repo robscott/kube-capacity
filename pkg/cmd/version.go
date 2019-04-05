@@ -1,4 +1,4 @@
-// Copyright 2019 Rob Scott
+// Copyright 2019 Kube Capacity Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of kube-capacity",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("kube-capacity version 0.2.0")
+		fmt.Println("kube-capacity version 0.3.0")
 	},
 }

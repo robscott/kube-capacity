@@ -82,6 +82,18 @@ example-node-2    tiller        tiller-deploy         140m (14%)      180m (18%)
 
 It's worth noting that utilization numbers from pods will likely not add up to the total node utilization numbers. Unlike request and limit numbers where node and cluster level numbers represent a sum of pod values, node metrics come directly from metrics-server and will likely include other forms of resource utilization.
 
+### Sorting
+To highlight the nodes, pods, and containers with the highest metrics, you can sort by a variety of columns:
+
+```
+kube-capacity --util --sort cpu.util
+
+NODE              CPU REQUESTS    CPU LIMITS    CPU UTIL    MEMORY REQUESTS    MEMORY LIMITS   MEMORY UTIL
+*                 560m (28%)      130m (7%)     40m (2%)    572Mi (9%)         770Mi (13%)     470Mi (8%)
+example-node-2    340m (34%)      120m (12%)    30m (3%)    380Mi (13%)        410Mi (14%)     260Mi (9%)
+example-node-1    220m (22%)      10m (1%)      10m (1%)    192Mi (6%)         360Mi (12%)     210Mi (7%)
+```
+
 ### Filtering By Labels
 For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels. The following examples show how to use these filters:
 
@@ -91,25 +103,46 @@ kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
 ```
 
-## Prerequisites
-Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
+### JSON and YAML Output
+By default, kube-capacity will provide output in a table format. To view this data in JSON or YAML format, the output flag can be used. Here are some sample commands:
+```
+kube-capacity --pods --output json
+kube-capacity --pods --containers --util --output yaml
+```
 
 ## Flags Supported
 ```
+  -c, --containers                includes containers in output
       --context string            context to use for Kubernetes config
   -h, --help                      help for kube-capacity
   -n, --namespace-labels string   labels to filter namespaces with
       --node-labels string        labels to filter nodes with
+  -o, --output string             output format for information
+                                    (supports: [table json yaml])
+                                    (default "table")
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
+      --sort string               attribute to sort results be (supports:
+                                    [cpu.util cpu.request cpu.limit mem.util mem.request mem.limit name])
+                                    (default "name")
   -u, --util                      includes resource utilization in output
 ```
+
+## Prerequisites
+Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
 
 ## Similar Projects
 There are already some great projects out there that have similar goals.
 
 - [kube-resource-report](https://github.com/hjacobs/kube-resource-report): generates HTML/CSS report for resource requests and limits across multiple clusters.
 - [kubetop](https://github.com/LeastAuthority/kubetop): a CLI similar to top for Kubernetes, focused on resource utilization (not requests and limits).
+
+## Contributors
+
+Although this project was originally developed by [robscott](https://github.com/robscott), there have been some great contributions from others:
+
+- [endzyme](https://github.com/endzyme)
+- [justinbarrick](https://github.com/justinbarrick)
 
 ## License
 Apache License 2.0

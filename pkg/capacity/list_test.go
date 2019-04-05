@@ -1,4 +1,4 @@
-// Copyright 2019 Rob Scott
+// Copyright 2019 Kube Capacity Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package capacity
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,39 +23,165 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
-	"k8s.io/client-go/kubernetes/fake"
 )
 
-func TestBuildClusterMetricEmpty(t *testing.T) {
-	cm := buildClusterMetric(
-		&corev1.PodList{}, &v1beta1.PodMetricsList{}, &corev1.NodeList{},
-	)
+func TestBuildListClusterMetricsNoOptions(t *testing.T) {
+	cm := getTestClusterMetric()
 
-	expected := clusterMetric{
-		cpu: &resourceMetric{
-			resourceType: "cpu",
-			allocatable:  resource.Quantity{},
-			request:      resource.Quantity{},
-			limit:        resource.Quantity{},
-			utilization:  resource.Quantity{},
-		},
-		memory: &resourceMetric{
-			resourceType: "memory",
-			allocatable:  resource.Quantity{},
-			request:      resource.Quantity{},
-			limit:        resource.Quantity{},
-			utilization:  resource.Quantity{},
-		},
-		nodeMetrics: map[string]*nodeMetric{},
-		podMetrics:  map[string]*podMetric{},
+	lp := listPrinter{
+		cm: &cm,
 	}
 
-	assert.EqualValues(t, cm, expected)
+	lcm := lp.buildListClusterMetrics()
+
+	assert.EqualValues(t, &listClusterTotals{
+		CPU: &listResourceOutput{
+			Requests:    "650m",
+			RequestsPct: "65%",
+			Limits:      "810m",
+			LimitsPct:   "81%",
+		},
+		Memory: &listResourceOutput{
+			Requests:    "410Mi",
+			RequestsPct: "10%",
+			Limits:      "580Mi",
+			LimitsPct:   "14%",
+		},
+	}, lcm.ClusterTotals)
+
+	assert.EqualValues(t, &listNodeMetric{
+		Name: "example-node-1",
+		CPU: &listResourceOutput{
+			Requests:    "650m",
+			RequestsPct: "65%",
+			Limits:      "810m",
+			LimitsPct:   "81%",
+		},
+		Memory: &listResourceOutput{
+			Requests:    "410Mi",
+			RequestsPct: "10%",
+			Limits:      "580Mi",
+			LimitsPct:   "14%",
+		},
+	}, lcm.Nodes[0])
+
 }
 
-func TestBuildClusterMetricFull(t *testing.T) {
-	cm := buildClusterMetric(
+func TestBuildListClusterMetricsAllOptions(t *testing.T) {
+	cm := getTestClusterMetric()
+
+	lp := listPrinter{
+		cm:             &cm,
+		showUtil:       true,
+		showPods:       true,
+		showContainers: true,
+	}
+
+	lcm := lp.buildListClusterMetrics()
+
+	assert.EqualValues(t, &listClusterTotals{
+		CPU: &listResourceOutput{
+			Requests:       "650m",
+			RequestsPct:    "65%",
+			Limits:         "810m",
+			LimitsPct:      "81%",
+			Utilization:    "63m",
+			UtilizationPct: "6%",
+		},
+		Memory: &listResourceOutput{
+			Requests:       "410Mi",
+			RequestsPct:    "10%",
+			Limits:         "580Mi",
+			LimitsPct:      "14%",
+			Utilization:    "439Mi",
+			UtilizationPct: "10%",
+		},
+	}, lcm.ClusterTotals)
+
+	assert.EqualValues(t, &listNodeMetric{
+		Name: "example-node-1",
+		CPU: &listResourceOutput{
+			Requests:       "650m",
+			RequestsPct:    "65%",
+			Limits:         "810m",
+			LimitsPct:      "81%",
+			Utilization:    "63m",
+			UtilizationPct: "6%",
+		},
+		Memory: &listResourceOutput{
+			Requests:       "410Mi",
+			RequestsPct:    "10%",
+			Limits:         "580Mi",
+			LimitsPct:      "14%",
+			Utilization:    "439Mi",
+			UtilizationPct: "10%",
+		},
+		Pods: []*listPod{
+			{
+				Name:      "example-pod",
+				Namespace: "default",
+				CPU: &listResourceOutput{
+					Requests:       "650m",
+					RequestsPct:    "65%",
+					Limits:         "810m",
+					LimitsPct:      "81%",
+					Utilization:    "63m",
+					UtilizationPct: "6%",
+				},
+				Memory: &listResourceOutput{
+					Requests:       "410Mi",
+					RequestsPct:    "10%",
+					Limits:         "580Mi",
+					LimitsPct:      "14%",
+					Utilization:    "439Mi",
+					UtilizationPct: "10%",
+				},
+				Containers: []listContainer{
+					{
+						Name: "example-container-1",
+						CPU: &listResourceOutput{
+							Requests:       "450m",
+							RequestsPct:    "45%",
+							Limits:         "560m",
+							LimitsPct:      "56%",
+							Utilization:    "40m",
+							UtilizationPct: "4%",
+						},
+						Memory: &listResourceOutput{
+							Requests:       "160Mi",
+							RequestsPct:    "4%",
+							Limits:         "280Mi",
+							LimitsPct:      "7%",
+							Utilization:    "288Mi",
+							UtilizationPct: "7%",
+						},
+					}, {
+						Name: "example-container-2",
+						CPU: &listResourceOutput{
+							Requests:       "200m",
+							RequestsPct:    "20%",
+							Limits:         "250m",
+							LimitsPct:      "25%",
+							Utilization:    "23m",
+							UtilizationPct: "2%",
+						},
+						Memory: &listResourceOutput{
+							Requests:       "250Mi",
+							RequestsPct:    "6%",
+							Limits:         "300Mi",
+							LimitsPct:      "7%",
+							Utilization:    "151Mi",
+							UtilizationPct: "3%",
+						},
+					},
+				},
+			},
+		}}, lcm.Nodes[0])
+
+}
+
+func getTestClusterMetric() clusterMetric {
+	return buildClusterMetric(
 		&corev1.PodList{
 			Items: []corev1.Pod{
 				{
@@ -68,26 +193,28 @@ func TestBuildClusterMetricFull(t *testing.T) {
 						NodeName: "example-node-1",
 						Containers: []corev1.Container{
 							{
+								Name: "example-container-1",
 								Resources: corev1.ResourceRequirements{
 									Requests: corev1.ResourceList{
-										"cpu":    resource.MustParse("250m"),
-										"memory": resource.MustParse("250Mi"),
+										"cpu":    resource.MustParse("450m"),
+										"memory": resource.MustParse("160Mi"),
 									},
 									Limits: corev1.ResourceList{
-										"cpu":    resource.MustParse("250m"),
-										"memory": resource.MustParse("500Mi"),
+										"cpu":    resource.MustParse("560m"),
+										"memory": resource.MustParse("280Mi"),
 									},
 								},
 							},
 							{
+								Name: "example-container-2",
 								Resources: corev1.ResourceRequirements{
 									Requests: corev1.ResourceList{
-										"cpu":    resource.MustParse("100m"),
-										"memory": resource.MustParse("150Mi"),
+										"cpu":    resource.MustParse("200m"),
+										"memory": resource.MustParse("250Mi"),
 									},
 									Limits: corev1.ResourceList{
-										"cpu":    resource.MustParse("150m"),
-										"memory": resource.MustParse("200Mi"),
+										"cpu":    resource.MustParse("250m"),
+										"memory": resource.MustParse("300Mi"),
 									},
 								},
 							},
@@ -104,15 +231,17 @@ func TestBuildClusterMetricFull(t *testing.T) {
 					},
 					Containers: []v1beta1.ContainerMetrics{
 						{
+							Name: "example-container-1",
 							Usage: corev1.ResourceList{
-								"cpu":    resource.MustParse("10m"),
-								"memory": resource.MustParse("188Mi"),
+								"cpu":    resource.MustParse("40m"),
+								"memory": resource.MustParse("288Mi"),
 							},
 						},
 						{
+							Name: "example-container-2",
 							Usage: corev1.ResourceList{
-								"cpu":    resource.MustParse("13m"),
-								"memory": resource.MustParse("111Mi"),
+								"cpu":    resource.MustParse("23m"),
+								"memory": resource.MustParse("151Mi"),
 							},
 						},
 					},
@@ -134,162 +263,4 @@ func TestBuildClusterMetricFull(t *testing.T) {
 			},
 		},
 	)
-
-	cpuExpected := &resourceMetric{
-		allocatable: resource.MustParse("1000m"),
-		request:     resource.MustParse("350m"),
-		limit:       resource.MustParse("400m"),
-		utilization: resource.MustParse("23m"),
-	}
-
-	memoryExpected := &resourceMetric{
-		allocatable: resource.MustParse("4000Mi"),
-		request:     resource.MustParse("400Mi"),
-		limit:       resource.MustParse("700Mi"),
-		utilization: resource.MustParse("299Mi"),
-	}
-
-	assert.Len(t, cm.podMetrics, 1)
-
-	assert.NotNil(t, cm.cpu)
-	ensureEqualResourceMetric(t, cm.cpu, cpuExpected)
-	assert.NotNil(t, cm.memory)
-	ensureEqualResourceMetric(t, cm.memory, memoryExpected)
-
-	assert.NotNil(t, cm.nodeMetrics["example-node-1"])
-	assert.NotNil(t, cm.nodeMetrics["example-node-1"].cpu)
-	ensureEqualResourceMetric(t, cm.nodeMetrics["example-node-1"].cpu, cpuExpected)
-	assert.NotNil(t, cm.nodeMetrics["example-node-1"].memory)
-	ensureEqualResourceMetric(t, cm.nodeMetrics["example-node-1"].memory, memoryExpected)
-
-	// Change to pod specific util numbers
-	cpuExpected.utilization = resource.MustParse("23m")
-	memoryExpected.utilization = resource.MustParse("299Mi")
-
-	assert.NotNil(t, cm.podMetrics["default-example-pod"])
-	assert.NotNil(t, cm.podMetrics["default-example-pod"].cpu)
-	ensureEqualResourceMetric(t, cm.podMetrics["default-example-pod"].cpu, cpuExpected)
-	assert.NotNil(t, cm.podMetrics["default-example-pod"].memory)
-	ensureEqualResourceMetric(t, cm.podMetrics["default-example-pod"].memory, memoryExpected)
-}
-
-func ensureEqualResourceMetric(t *testing.T, actual *resourceMetric, expected *resourceMetric) {
-	assert.Equal(t, actual.allocatable.MilliValue(), expected.allocatable.MilliValue())
-	assert.Equal(t, actual.utilization.MilliValue(), expected.utilization.MilliValue())
-	assert.Equal(t, actual.request.MilliValue(), expected.request.MilliValue())
-	assert.Equal(t, actual.limit.MilliValue(), expected.limit.MilliValue())
-}
-
-func listNodes(n *corev1.NodeList) []string {
-	nodes := []string{}
-
-	for _, node := range n.Items {
-		nodes = append(nodes, node.GetName())
-	}
-
-	return nodes
-}
-
-func listPods(p *corev1.PodList) []string {
-	pods := []string{}
-
-	for _, pod := range p.Items {
-		pods = append(pods, fmt.Sprintf("%s/%s", pod.GetNamespace(), pod.GetName()))
-	}
-
-	return pods
-}
-
-func node(name string, labels map[string]string) *corev1.Node {
-	return &corev1.Node{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Node",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: labels,
-		},
-	}
-}
-
-func namespace(name string, labels map[string]string) *corev1.Namespace {
-	return &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Namespace",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Labels: labels,
-		},
-	}
-}
-
-func pod(node, namespace, name string, labels map[string]string) *corev1.Pod {
-	return &corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Pod",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Namespace: namespace,
-			Labels: labels,
-		},
-		Spec: corev1.PodSpec{
-			NodeName: node,
-		},
-	}
-}
-
-func TestGetPodsAndNodes(t *testing.T) {
-	clientset := fake.NewSimpleClientset(
-		node("mynode", map[string]string{"hello": "world"}),
-		node("mynode2", map[string]string{"hello": "world", "moon": "lol"}),
-		namespace("default", map[string]string{"app": "true"}),
-		namespace("kube-system", map[string]string{"system": "true"}),
-		namespace("other", map[string]string{"app": "true", "system": "true"}),
-		namespace("another", map[string]string{"hello": "world"}),
-		pod("mynode", "default", "mypod", map[string]string{"a": "test"}),
-		pod("mynode2", "kube-system", "mypod1", map[string]string{"b": "test"}),
-		pod("mynode", "other", "mypod2", map[string]string{"c": "test"}),
-		pod("mynode2", "other", "mypod3", map[string]string{"d": "test"}),
-		pod("mynode2", "default", "mypod4", map[string]string{"e": "test"}),
-		pod("mynode", "another", "mypod5", map[string]string{"f": "test"}),
-		pod("mynode", "default", "mypod6", map[string]string{"g": "test"}),
-	)
-
-	podList, nodeList := getPodsAndNodes(clientset, "", "", "")
-	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
-	assert.Equal(t, []string{
-		"default/mypod", "kube-system/mypod1", "other/mypod2", "other/mypod3", "default/mypod4",
-		"another/mypod5", "default/mypod6",
-	}, listPods(podList))
-
-	podList, nodeList = getPodsAndNodes(clientset, "", "hello=world", "")
-	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
-	assert.Equal(t, []string{
-		"default/mypod", "kube-system/mypod1", "other/mypod2", "other/mypod3", "default/mypod4",
-		"another/mypod5", "default/mypod6",
-	}, listPods(podList))
-
-	podList, nodeList = getPodsAndNodes(clientset, "", "moon=lol", "")
-	assert.Equal(t, []string{"mynode2"}, listNodes(nodeList))
-	assert.Equal(t, []string{
-		"kube-system/mypod1", "other/mypod3", "default/mypod4",
-	}, listPods(podList))
-
-	podList, nodeList = getPodsAndNodes(clientset, "a=test", "", "")
-	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
-	assert.Equal(t, []string{
-		"default/mypod",
-	}, listPods(podList))
-
-
-	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "app=true")
-	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
-	assert.Equal(t, []string{
-		"default/mypod",
-	}, listPods(podList))
 }
