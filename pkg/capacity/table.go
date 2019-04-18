@@ -69,7 +69,6 @@ func (tp *tablePrinter) Print() {
 
 	for _, nm := range sortedNodeMetrics {
 		tp.printNodeLine(nm.name, nm)
-		tp.printLine(&tableLine{})
 
 		if tp.showPods || tp.showContainers {
 			podMetrics := nm.getSortedPodMetrics(tp.sortBy)
