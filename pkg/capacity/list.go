@@ -33,7 +33,7 @@ type listPod struct {
 	Namespace  string              `json:"namespace"`
 	CPU        *listResourceOutput `json:"cpu"`
 	Memory     *listResourceOutput `json:"memory"`
-	Containers []listContainer     `json:"containers"`
+	Containers []listContainer     `json:"containers,omitempty"`
 }
 
 type listContainer struct {
@@ -44,16 +44,16 @@ type listContainer struct {
 
 type listResourceOutput struct {
 	Requests       string `json:"requests"`
-	RequestsPct    string `json:"requests_pct"`
+	RequestsPct    string `json:"requestsPercent"`
 	Limits         string `json:"limits"`
-	LimitsPct      string `json:"limits_pct"`
+	LimitsPct      string `json:"limitsPercent"`
 	Utilization    string `json:"utilization,omitempty"`
-	UtilizationPct string `json:"utilization_pct,omitempty"`
+	UtilizationPct string `json:"utilizationPercent,omitempty"`
 }
 
 type listClusterMetrics struct {
 	Nodes         []*listNodeMetric  `json:"nodes"`
-	ClusterTotals *listClusterTotals `json:"cluster_totals"`
+	ClusterTotals *listClusterTotals `json:"clusterTotals"`
 }
 
 type listClusterTotals struct {
