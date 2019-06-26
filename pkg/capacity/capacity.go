@@ -37,6 +37,8 @@ func FetchAndPrint(showContainers, showPods, showUtil bool, podLabels, nodeLabel
 
 	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, namespaceLabels)
 	pmList := &v1beta1.PodMetricsList{}
+	nmList := &v1beta1.NodeMetricsList{}
+
 	if showUtil {
 		mClientset, err := kube.NewMetricsClientSet(kubeContext)
 		if err != nil {
@@ -44,10 +46,11 @@ func FetchAndPrint(showContainers, showPods, showUtil bool, podLabels, nodeLabel
 			os.Exit(4)
 		}
 
-		pmList = getMetrics(mClientset)
+		pmList = getPodMetrics(mClientset)
+		nmList = getNodeMetrics(mClientset)
 	}
 
-	cm := buildClusterMetric(podList, pmList, nodeList)
+	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
 	printList(&cm, showContainers, showPods, showUtil, output, sortBy)
 }
 
@@ -115,7 +118,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, name
 	return podList, nodeList
 }
 
-func getMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
+func getPodMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
 	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error getting Pod Metrics: %v\n", err)
@@ -124,4 +127,15 @@ func getMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
 	}
 
 	return pmList
+}
+
+func getNodeMetrics(mClientset *metrics.Clientset) *v1beta1.NodeMetricsList {
+	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error getting Node Metrics: %v\n", err)
+		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
+		os.Exit(7)
+	}
+
+	return nmList
 }

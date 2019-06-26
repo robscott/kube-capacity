@@ -70,7 +70,8 @@ type containerMetric struct {
 	memory *resourceMetric
 }
 
-func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList, nodeList *corev1.NodeList) clusterMetric {
+func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
+	nodeList *corev1.NodeList, nmList *v1beta1.NodeMetricsList) clusterMetric {
 	cm := clusterMetric{
 		cpu:         &resourceMetric{resourceType: "cpu"},
 		memory:      &resourceMetric{resourceType: "memory"},
@@ -90,9 +91,11 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 			},
 			podMetrics: map[string]*podMetric{},
 		}
+	}
 
-		cm.cpu.allocatable.Add(node.Status.Allocatable["cpu"])
-		cm.memory.allocatable.Add(node.Status.Allocatable["memory"])
+	for _, nm := range nmList.Items {
+		cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
+		cm.nodeMetrics[nm.Name].memory.utilization = nm.Usage["memory"]
 	}
 
 	podMetrics := map[string]v1beta1.PodMetrics{}
@@ -103,6 +106,13 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	for _, pod := range podList.Items {
 		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
 			cm.addPodMetric(&pod, podMetrics[fmt.Sprintf("%s-%s", pod.GetNamespace(), pod.GetName())])
+		}
+	}
+
+	for _, node := range nodeList.Items {
+		nm := cm.nodeMetrics[node.Name]
+		if nm != nil {
+			cm.addNodeMetric(cm.nodeMetrics[node.Name])
 		}
 	}
 
@@ -156,11 +166,6 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 	}
 
 	if nm != nil {
-		cm.cpu.request.Add(req["cpu"])
-		cm.cpu.limit.Add(limit["cpu"])
-		cm.memory.request.Add(req["memory"])
-		cm.memory.limit.Add(limit["memory"])
-
 		nm.podMetrics[key] = pm
 		nm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
 		nm.podMetrics[key].memory.allocatable = nm.memory.allocatable
@@ -172,20 +177,13 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 	}
 
 	for _, container := range podMetrics.Containers {
-		pm.containerMetrics[container.Name].cpu.utilization = container.Usage["cpu"]
-		pm.cpu.utilization.Add(container.Usage["cpu"])
-		pm.containerMetrics[container.Name].memory.utilization = container.Usage["memory"]
-		pm.memory.utilization.Add(container.Usage["memory"])
-
-		if nm == nil {
-			continue
+		cm := pm.containerMetrics[container.Name]
+		if cm != nil {
+			pm.containerMetrics[container.Name].cpu.utilization = container.Usage["cpu"]
+			pm.cpu.utilization.Add(container.Usage["cpu"])
+			pm.containerMetrics[container.Name].memory.utilization = container.Usage["memory"]
+			pm.memory.utilization.Add(container.Usage["memory"])
 		}
-
-		nm.cpu.utilization.Add(container.Usage["cpu"])
-		nm.memory.utilization.Add(container.Usage["memory"])
-
-		cm.cpu.utilization.Add(container.Usage["cpu"])
-		cm.memory.utilization.Add(container.Usage["memory"])
 	}
 }
 
