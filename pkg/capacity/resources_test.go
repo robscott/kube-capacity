@@ -28,7 +28,7 @@ import (
 
 func TestBuildClusterMetricEmpty(t *testing.T) {
 	cm := buildClusterMetric(
-		&corev1.PodList{}, &v1beta1.PodMetricsList{}, &corev1.NodeList{},
+		&corev1.PodList{}, &v1beta1.PodMetricsList{}, &corev1.NodeList{}, &v1beta1.NodeMetricsList{},
 	)
 
 	expected := clusterMetric{
@@ -129,6 +129,18 @@ func TestBuildClusterMetricFull(t *testing.T) {
 					},
 				},
 			},
+		}, &v1beta1.NodeMetricsList{
+			Items: []v1beta1.NodeMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "example-node-1",
+					},
+					Usage: corev1.ResourceList{
+						"cpu":    resource.MustParse("43m"),
+						"memory": resource.MustParse("349Mi"),
+					},
+				},
+			},
 		},
 	)
 
@@ -136,14 +148,14 @@ func TestBuildClusterMetricFull(t *testing.T) {
 		allocatable: resource.MustParse("1000m"),
 		request:     resource.MustParse("350m"),
 		limit:       resource.MustParse("400m"),
-		utilization: resource.MustParse("23m"),
+		utilization: resource.MustParse("43m"),
 	}
 
 	memoryExpected := &resourceMetric{
 		allocatable: resource.MustParse("4000Mi"),
 		request:     resource.MustParse("400Mi"),
 		limit:       resource.MustParse("700Mi"),
-		utilization: resource.MustParse("299Mi"),
+		utilization: resource.MustParse("349Mi"),
 	}
 
 	assert.NotNil(t, cm.cpu)

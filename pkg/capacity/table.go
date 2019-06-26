@@ -64,10 +64,13 @@ func (tp *tablePrinter) Print() {
 
 	if len(sortedNodeMetrics) > 1 {
 		tp.printClusterLine()
-		tp.printLine(&tableLine{})
 	}
 
 	for _, nm := range sortedNodeMetrics {
+		if tp.showPods || tp.showContainers {
+			tp.printLine(&tableLine{})
+		}
+
 		tp.printNodeLine(nm.name, nm)
 
 		if tp.showPods || tp.showContainers {
