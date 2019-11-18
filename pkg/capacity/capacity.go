@@ -47,7 +47,7 @@ func FetchAndPrint(showContainers, showPods, showUtil bool, podLabels, nodeLabel
 		}
 
 		pmList = getPodMetrics(mClientset)
-		nmList = getNodeMetrics(mClientset)
+		nmList = getNodeMetrics(mClientset, nodeLabels)
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
@@ -129,8 +129,10 @@ func getPodMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
 	return pmList
 }
 
-func getNodeMetrics(mClientset *metrics.Clientset) *v1beta1.NodeMetricsList {
-	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+func getNodeMetrics(mClientset *metrics.Clientset, nodeLabels string) *v1beta1.NodeMetricsList {
+	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{
+		LabelSelector: nodeLabels,
+	})
 	if err != nil {
 		fmt.Printf("Error getting Node Metrics: %v\n", err)
 		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
