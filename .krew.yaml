@@ -1,0 +1,29 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: resource-capacity
+spec:
+  version: v{{ .TagName }}
+  homepage: https://github.com/robscott/kube-capacity
+  shortDescription: Provides an overview of resource requests, limits, and utilization
+  platforms:
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    bin: kube-capacity
+    files:
+    - from: "*"
+      to: "."
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Darwin_x86_64.tar.gz" .TagName }}    
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    bin: kube-capacity
+    files:
+    - from: "*"
+      to: "."
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Linux_x86_64.tar.gz" .TagName }}
+  description: |
+    A simple CLI that provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster.
