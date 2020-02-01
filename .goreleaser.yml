@@ -18,11 +18,4 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-brews:
-  - github:
-      owner: robscott
-      name: homebrew-tap
-    folder: Formula
-    description: kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster
-    test: |
-      system "#{bin}/kube-capacity version"
+
