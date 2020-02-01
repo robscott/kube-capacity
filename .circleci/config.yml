@@ -46,9 +46,13 @@ workflows:
   version: 2
   main:
     jobs:
-      - test
-
+      - test:
+          filters:
+            tags:
+              only: /.*/
       - release:
+          requires:
+            - test
           filters:
             branches:
               ignore: /.*/
