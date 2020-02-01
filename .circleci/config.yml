@@ -29,17 +29,13 @@ jobs:
     docker:
       - image: ubuntu:latest
         environment:
-          GITHUB_REPOSITORY: ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
-          GITHUB_ACTOR: ${CIRCLE_USERNAME}
           KREW_RELEASE_BOT_WEBHOOK_URL: https://krew-release-bot-dryrun.rajatjindal.com/github-action-webhook
-          GITHUB_WORKSPACE: ${CIRCLE_WORKING_DIRECTORY}
-          GITHUB_REF: refs/tags/${CIRCLE_TAG}
 
     steps:
       - checkout
       - run: apt-get update && apt-get install curl -y
-      - run: curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/v0.0.34-3/krew-release-bot_v0.0.34-3_linux_amd64.tar.gz
-      - run: tar -xvf krew-release-bot_v0.0.34-3_linux_amd64.tar.gz
+      - run: curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/v0.0.34-4/krew-release-bot_v0.0.34-4_linux_amd64.tar.gz
+      - run: tar -xvf krew-release-bot_v0.0.34-4_linux_amd64.tar.gz
       - run: ls -ltr
       - run: pwd
       - run: printenv
