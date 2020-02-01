@@ -5,7 +5,7 @@ jobs:
     working_directory: /go/src/github.com/robscott/kube-capacity
 
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
 
     steps:
       - checkout
