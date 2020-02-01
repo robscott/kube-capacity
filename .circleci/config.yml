@@ -27,7 +27,7 @@ jobs:
     working_directory: /go/src/github.com/robscott/kube-capacity
     
     docker:
-      - image: rajatjindal/krew-release-bot:v0.0.33
+      - image: circleci/golang:1.13
         environment:
           GITHUB_REPOSITORY: ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
           GITHUB_ACTOR: ${CIRCLE_USERNAME}
@@ -36,9 +36,15 @@ jobs:
           GITHUB_REF: refs/tags/${CIRCLE_TAG}
 
     steps:
-      - run: ls -ltr
-      - run: pwd
-      - run: krew-release-bot action 
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: 
+          name: publish to krew index
+          command: |
+            printenv
+            docker create -v /workspace --name tempo alpine:3.4 /bin/true
+            docker cp .krew.yaml tempo:/.krew.yaml
+            docker run --volumes-from tempo rajatjindal/krew-release-bot:v0.0.33 krew-release-bot action
 
 workflows:
   version: 2
