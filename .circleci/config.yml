@@ -24,14 +24,42 @@ jobs:
       - checkout
       - run: curl -sL https://git.io/goreleaser | bash
 
+
+  update-krew-index:
+    working_directory: /go/src/github.com/robscott/kube-capacity
+
+    docker:
+      - image: circleci/golang:1.13
+        environment:
+          KREW_RELEASE_BOT_WEBHOOK_URL: https://krew-release-bot-dryrun.rajatjindal.com/github-action-webhook
+          KREW_RELEASE_BOT_VERSION: v0.0.34-4
+    steps:
+      - checkout
+      - run: |
+          echo "using krew-release-bot version ${KREW_RELEASE_BOT_VERSION}"
+          curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/${KREW_RELEASE_BOT_VERSION}/krew-release-bot_${KREW_RELEASE_BOT_VERSION}_linux_amd64.tar.gz
+          tar -xvf krew-release-bot_${KREW_RELEASE_BOT_VERSION}_linux_amd64.tar.gz
+      - run: ./krew-release-bot action
+
+
 workflows:
   version: 2
   main:
     jobs:
       - test
+
       - release:
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /[0-9]+(\.[0-9]+)*(-.*)*/
+
+      - update-krew-index:
+          requires:
+            - release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /[0-9]+(\.[0-9]+)*(-.*)*/ 
