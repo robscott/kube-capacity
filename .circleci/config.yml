@@ -36,7 +36,8 @@ jobs:
           GITHUB_REF: refs/tags/${CIRCLE_TAG}
 
     steps:
-      - checkout
+      - run: ls -ltr
+      - run: pwd
       - run: krew-release-bot action 
 
 workflows:
