@@ -34,7 +34,8 @@ jobs:
 
     steps:
       - checkout
-      - run: | 
+      - run: |
+          echo "using krew-release-bot version ${KREW_RELEASE_BOT_VERSION}"
           curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/${KREW_RELEASE_BOT_VERSION}/krew-release-bot_${KREW_RELEASE_BOT_VERSION}_linux_amd64.tar.gz
           tar -xvf krew-release-bot_${KREW_RELEASE_BOT_VERSION}_linux_amd64.tar.gz
       - run: ./krew-release-bot action
