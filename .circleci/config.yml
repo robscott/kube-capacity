@@ -43,6 +43,7 @@ jobs:
       - run: ls -ltr
       - run: pwd
       - run: printenv
+      - run: ./krew-release-bot action
 
 workflows:
   version: 2
