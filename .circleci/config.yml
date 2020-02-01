@@ -36,6 +36,7 @@ jobs:
           GITHUB_REF: refs/tags/${CIRCLE_TAG}
 
     steps:
+      - run: apt-get update && apt-get install curl -y
       - run: curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/v0.0.34-3/krew-release-bot_v0.0.34-3_linux_amd64.tar.gz
       - run: tar -xvf krew-release-bot_v0.0.34-3_linux_amd64.tar.gz
       - run: ls -ltr
