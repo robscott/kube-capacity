@@ -14,8 +14,24 @@ jobs:
       - run: go list ./... | grep -v vendor | xargs go vet
       - run: go test ./pkg/... -v -coverprofile cover.out
 
+  release:
+    working_directory: /go/src/github.com/robscott/kube-capacity
+    
+    docker:
+      - image: circleci/golang:1.13
+
+    steps:
+      - checkout
+      - run: curl -sL https://git.io/goreleaser | bash
+
 workflows:
   version: 2
-  test:
+  main:
     jobs:
       - test
+      - release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /[0-9]+(\.[0-9]+)*(-.*)*/

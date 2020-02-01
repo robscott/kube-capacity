@@ -1,13 +1,13 @@
 builds:
 - env:
   - CGO_ENABLED=0
-archive:
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -18,11 +18,11 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-brew:
-  github:
-    owner: robscott
-    name: homebrew-tap
-  folder: Formula
-  description: kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster
-  test: |
-    system "#{bin}/kube-capacity version"
+brews:
+  - github:
+      owner: robscott
+      name: homebrew-tap
+    folder: Formula
+    description: kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster
+    test: |
+      system "#{bin}/kube-capacity version"  
