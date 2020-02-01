@@ -33,7 +33,6 @@ jobs:
 
     steps:
       - checkout
-      - run: apt-get update && apt-get install curl -y
       - run: curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/v0.0.34-4/krew-release-bot_v0.0.34-4_linux_amd64.tar.gz
       - run: tar -xvf krew-release-bot_v0.0.34-4_linux_amd64.tar.gz
       - run: ls -ltr
