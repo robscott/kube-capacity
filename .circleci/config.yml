@@ -30,11 +30,12 @@ jobs:
       - image: circleci/golang:1.13
         environment:
           KREW_RELEASE_BOT_WEBHOOK_URL: https://krew-release-bot-dryrun.rajatjindal.com/github-action-webhook
+          KREW_RELEASE_BOT_VERSION: v0.0.34-4
 
     steps:
       - checkout
-      - run: curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/v0.0.34-4/krew-release-bot_v0.0.34-4_linux_amd64.tar.gz
-      - run: tar -xvf krew-release-bot_v0.0.34-4_linux_amd64.tar.gz
+      - run: curl -LO https://github.com/rajatjindal/krew-release-bot/releases/download/${KREW_RELEASE_BOT_VERSION}/krew-release-bot_${KREW_RELEASE_BOT_VERSION}_linux_amd64.tar.gz
+      - run: tar -xvf krew-release-bot_${KREW_RELEASE_BOT_VERSION}_linux_amd64.tar.gz
       - run: ls -ltr
       - run: pwd
       - run: printenv
