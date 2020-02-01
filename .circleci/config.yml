@@ -27,7 +27,7 @@ jobs:
     working_directory: /go/src/github.com/robscott/kube-capacity
     
     docker:
-      - image: ubuntu:latest
+      - image: circleci/golang:1.13
         environment:
           KREW_RELEASE_BOT_WEBHOOK_URL: https://krew-release-bot-dryrun.rajatjindal.com/github-action-webhook
 
