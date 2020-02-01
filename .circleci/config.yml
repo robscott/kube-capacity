@@ -23,6 +23,22 @@ jobs:
       - checkout
       - run: curl -sL https://git.io/goreleaser | bash
 
+  update-krew-index:
+    working_directory: /go/src/github.com/robscott/kube-capacity
+    
+    docker:
+      - image: rajatjindal/krew-release-bot:v0.0.33
+        environment:
+          GITHUB_REPOSITORY: ${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+          GITHUB_ACTOR: ${CIRCLE_USERNAME}
+          KREW_RELEASE_BOT_WEBHOOK_URL: https://krew-release-bot-dryrun.rajatjindal.com/github-action-webhook
+          GITHUB_WORKSPACE: ${CIRCLE_WORKING_DIRECTORY}
+          GITHUB_REF: refs/tags/${CIRCLE_TAG}
+
+    steps:
+      - checkout
+      - run: krew-release-bot action 
+
 workflows:
   version: 2
   main:
