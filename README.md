@@ -20,6 +20,12 @@ This project can be installed with [Krew](https://github.com/GoogleContainerTool
 kubectl krew install resource-capacity
 ```
 
+### Arch Linux
+This project can be installed with [AUR](https://aur.archlinux.org/packages/kube-capacity):
+```
+yay -S kube-capacity
+```
+
 ## Usage
 By default, kube-capacity will output a list of nodes with the total CPU and Memory resource requests and limits for all the pods running on them. For clusters with more than one node, the first line will also include cluster wide totals. That output will look something like this:
 
