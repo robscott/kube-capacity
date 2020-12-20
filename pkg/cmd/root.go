@@ -31,6 +31,7 @@ var namespaceLabels string
 var kubeContext string
 var outputFormat string
 var sortBy string
+var availableFormat bool
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -46,7 +47,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(showContainers, showPods, showUtil, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat, sortBy)
+		capacity.FetchAndPrint(showContainers, showPods, showUtil, availableFormat, podLabels, nodeLabels, namespaceLabels, kubeContext, outputFormat, sortBy)
 	},
 }
 
@@ -57,6 +58,8 @@ func init() {
 		"pods", "p", false, "includes pods in output")
 	rootCmd.PersistentFlags().BoolVarP(&showUtil,
 		"util", "u", false, "includes resource utilization in output")
+	rootCmd.PersistentFlags().BoolVarP(&availableFormat,
+		"available", "a", false, "formats the output in terms of available instead of percentage")
 	rootCmd.PersistentFlags().StringVarP(&podLabels,
 		"pod-labels", "l", "", "labels to filter pods with")
 	rootCmd.PersistentFlags().StringVarP(&nodeLabels,

@@ -294,29 +294,40 @@ func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric
 	return sortedContainerMetrics
 }
 
-func (rm *resourceMetric) requestString() string {
-	return resourceString(rm.request, rm.allocatable, rm.resourceType)
+func (rm *resourceMetric) requestString(availableFormat bool) string {
+	return resourceString(rm.request, rm.allocatable, rm.resourceType, availableFormat)
 }
 
-func (rm *resourceMetric) limitString() string {
-	return resourceString(rm.limit, rm.allocatable, rm.resourceType)
+func (rm *resourceMetric) limitString(availableFormat bool) string {
+	return resourceString(rm.limit, rm.allocatable, rm.resourceType, availableFormat)
 }
 
-func (rm *resourceMetric) utilString() string {
-	return resourceString(rm.utilization, rm.allocatable, rm.resourceType)
+func (rm *resourceMetric) utilString(availableFormat bool) string {
+	return resourceString(rm.utilization, rm.allocatable, rm.resourceType, availableFormat)
 }
 
-func resourceString(actual, allocatable resource.Quantity, resourceType string) string {
-	utilPercent := float64(0)
+func resourceString(actual, allocatable resource.Quantity, resourceType string, availableFormat bool) string {
+	utilPercent := int64(0)
 	if allocatable.MilliValue() > 0 {
-		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
+		utilPercent = int64(float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100)
 	}
+
+	// Memory default
+	unit := "Mi"
+	actualValue := actual.Value() / 1048576
+	allocatableValue := allocatable.Value() / 1048576
 
 	if resourceType == "cpu" {
-		return fmt.Sprintf("%dm (%d", actual.MilliValue(), int64(utilPercent)) + "%%)"
+		actualValue = actual.MilliValue()
+		allocatableValue = allocatable.MilliValue()
+		unit = "m"
 	}
 
-	return fmt.Sprintf("%dMi (%d", actual.Value()/1048576, int64(utilPercent)) + "%%)"
+	if availableFormat {
+		return fmt.Sprintf("%d/%d%s", actualValue, allocatableValue, unit)
+	}
+	return fmt.Sprintf("%d%s (%d%%%%)", actualValue, unit, utilPercent)
+
 }
 
 // NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.

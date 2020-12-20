@@ -38,7 +38,7 @@ func SupportedOutputs() []string {
 	}
 }
 
-func printList(cm *clusterMetric, showContainers, showPods, showUtil bool, output, sortBy string) {
+func printList(cm *clusterMetric, showContainers, showPods, showUtil bool, output, sortBy string, availableFormat bool) {
 	if output == JSONOutput || output == YAMLOutput {
 		lp := &listPrinter{
 			cm:             cm,
@@ -50,12 +50,13 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil bool, outpu
 		lp.Print(output)
 	} else if output == TableOutput {
 		tp := &tablePrinter{
-			cm:             cm,
-			showPods:       showPods,
-			showUtil:       showUtil,
-			showContainers: showContainers,
-			sortBy:         sortBy,
-			w:              new(tabwriter.Writer),
+			cm:              cm,
+			showPods:        showPods,
+			showUtil:        showUtil,
+			showContainers:  showContainers,
+			sortBy:          sortBy,
+			w:               new(tabwriter.Writer),
+			availableFormat: availableFormat,
 		}
 		tp.Print()
 	} else {
