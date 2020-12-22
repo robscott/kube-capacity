@@ -59,7 +59,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&showUtil,
 		"util", "u", false, "includes resource utilization in output")
 	rootCmd.PersistentFlags().BoolVarP(&availableFormat,
-		"available", "a", false, "formats the output in terms of available instead of percentage")
+		"available", "a", false, "includes quantity available instead of percentage used")
 	rootCmd.PersistentFlags().StringVarP(&podLabels,
 		"pod-labels", "l", "", "labels to filter pods with")
 	rootCmd.PersistentFlags().StringVarP(&nodeLabels,
