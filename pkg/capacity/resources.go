@@ -24,6 +24,10 @@ import (
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+const (
+	byte2MiFactor = 1048576
+)
+
 // SupportedSortAttributes lists the valid sorting options
 var SupportedSortAttributes = [...]string{
 	"cpu.util",
@@ -314,8 +318,8 @@ func resourceString(actual, allocatable resource.Quantity, resourceType string, 
 
 	// Memory default
 	unit := "Mi"
-	actualValue := actual.Value() / 1048576
-	allocatableValue := allocatable.Value() / 1048576
+	actualValue := actual.Value() / byte2MiFactor
+	allocatableValue := allocatable.Value() / byte2MiFactor
 
 	if resourceType == "cpu" {
 		actualValue = actual.MilliValue()
@@ -339,7 +343,7 @@ func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
 		}
 	case "memory":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%dMi", r.Value()/1048576)
+			return fmt.Sprintf("%dMi", r.Value()/byte2MiFactor)
 		}
 	}
 	return f
