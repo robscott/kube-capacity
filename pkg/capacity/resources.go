@@ -24,10 +24,6 @@ import (
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-const (
-	byte2MiFactor = 1048576
-)
-
 // SupportedSortAttributes lists the valid sorting options
 var SupportedSortAttributes = [...]string{
 	"cpu.util",
@@ -299,38 +295,30 @@ func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric
 }
 
 func (rm *resourceMetric) requestString(availableFormat bool) string {
-	return resourceString(rm.request, rm.allocatable, rm.resourceType, availableFormat)
+	return resourceString(rm.request, rm.allocatable, availableFormat)
 }
 
 func (rm *resourceMetric) limitString(availableFormat bool) string {
-	return resourceString(rm.limit, rm.allocatable, rm.resourceType, availableFormat)
+	return resourceString(rm.limit, rm.allocatable, availableFormat)
 }
 
 func (rm *resourceMetric) utilString(availableFormat bool) string {
-	return resourceString(rm.utilization, rm.allocatable, rm.resourceType, availableFormat)
+	return resourceString(rm.utilization, rm.allocatable, availableFormat)
 }
 
-func resourceString(actual, allocatable resource.Quantity, resourceType string, availableFormat bool) string {
+func resourceString(actual, allocatable resource.Quantity, availableFormat bool) string {
 	utilPercent := int64(0)
 	if allocatable.MilliValue() > 0 {
 		utilPercent = int64(float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100)
 	}
-
-	// Memory default
-	unit := "Mi"
-	actualValue := actual.Value() / byte2MiFactor
-	allocatableValue := allocatable.Value() / byte2MiFactor
-
-	if resourceType == "cpu" {
-		actualValue = actual.MilliValue()
-		allocatableValue = allocatable.MilliValue()
-		unit = "m"
-	}
-
 	if availableFormat {
-		return fmt.Sprintf("%d/%d%s", actualValue, allocatableValue, unit)
+		// performs rounding on BinarySI to make sure units are the same
+		if allocatable.Format == resource.BinarySI {
+			allocatable.SetMilli(actual.MilliValue() * utilPercent)
+		}
+		return fmt.Sprintf("%s/%s", actual.String(), allocatable.String())
 	}
-	return fmt.Sprintf("%d%s (%d%%%%)", actualValue, unit, utilPercent)
+	return fmt.Sprintf("%s (%d%%%%)", actual.String(), utilPercent)
 
 }
 
@@ -339,11 +327,11 @@ func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
 	switch rm.resourceType {
 	case "cpu":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%dm", r.MilliValue())
+			return fmt.Sprintf("%s", r.String())
 		}
 	case "memory":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%dMi", r.Value()/byte2MiFactor)
+			return fmt.Sprintf("%s", r.String())
 		}
 	}
 	return f
