@@ -15,6 +15,7 @@
 package capacity
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -55,7 +56,7 @@ func FetchAndPrint(showContainers, showPods, showUtil, availableFormat bool, pod
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels string) (*corev1.PodList, *corev1.NodeList) {
-	nodeList, err := clientset.CoreV1().Nodes().List(metav1.ListOptions{
+	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})
 	if err != nil {
@@ -63,7 +64,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, name
 		os.Exit(2)
 	}
 
-	podList, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{
+	podList, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{
 		LabelSelector: podLabels,
 	})
 	if err != nil {
@@ -89,7 +90,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, name
 	podList.Items = newPodItems
 
 	if namespaceLabels != "" {
-		namespaceList, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{
+		namespaceList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
 			LabelSelector: namespaceLabels,
 		})
 		if err != nil {
@@ -119,7 +120,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, name
 }
 
 func getPodMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
-	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(metav1.ListOptions{})
+	pmList, err := mClientset.MetricsV1beta1().PodMetricses("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error getting Pod Metrics: %v\n", err)
 		fmt.Println("For this to work, metrics-server needs to be running in your cluster")
@@ -130,7 +131,7 @@ func getPodMetrics(mClientset *metrics.Clientset) *v1beta1.PodMetricsList {
 }
 
 func getNodeMetrics(mClientset *metrics.Clientset, nodeLabels string) *v1beta1.NodeMetricsList {
-	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{
+	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})
 	if err != nil {
