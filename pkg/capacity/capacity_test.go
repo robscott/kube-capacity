@@ -45,21 +45,33 @@ func TestGetPodsAndNodes(t *testing.T) {
 	podList, nodeList := getPodsAndNodes(clientset, "", "", "")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
-		"default/mypod", "kube-system/mypod1", "other/mypod2", "other/mypod3", "default/mypod4",
-		"another/mypod5", "default/mypod6",
+		"another/mypod5",
+		"default/mypod",
+		"default/mypod4",
+		"default/mypod6",
+		"kube-system/mypod1",
+		"other/mypod2",
+		"other/mypod3",
 	}, listPods(podList))
 
 	podList, nodeList = getPodsAndNodes(clientset, "", "hello=world", "")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
-		"default/mypod", "kube-system/mypod1", "other/mypod2", "other/mypod3", "default/mypod4",
-		"another/mypod5", "default/mypod6",
+		"another/mypod5",
+		"default/mypod",
+		"default/mypod4",
+		"default/mypod6",
+		"kube-system/mypod1",
+		"other/mypod2",
+		"other/mypod3",
 	}, listPods(podList))
 
 	podList, nodeList = getPodsAndNodes(clientset, "", "moon=lol", "")
 	assert.Equal(t, []string{"mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
-		"kube-system/mypod1", "other/mypod3", "default/mypod4",
+		"default/mypod4",
+		"kube-system/mypod1",
+		"other/mypod3",
 	}, listPods(podList))
 
 	podList, nodeList = getPodsAndNodes(clientset, "a=test", "", "")
