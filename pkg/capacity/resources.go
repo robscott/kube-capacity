@@ -294,29 +294,32 @@ func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric
 	return sortedContainerMetrics
 }
 
-func (rm *resourceMetric) requestString() string {
-	return resourceString(rm.request, rm.allocatable, rm.resourceType)
+func (rm *resourceMetric) requestString(availableFormat bool) string {
+	return resourceString(rm.request, rm.allocatable, availableFormat)
 }
 
-func (rm *resourceMetric) limitString() string {
-	return resourceString(rm.limit, rm.allocatable, rm.resourceType)
+func (rm *resourceMetric) limitString(availableFormat bool) string {
+	return resourceString(rm.limit, rm.allocatable, availableFormat)
 }
 
-func (rm *resourceMetric) utilString() string {
-	return resourceString(rm.utilization, rm.allocatable, rm.resourceType)
+func (rm *resourceMetric) utilString(availableFormat bool) string {
+	return resourceString(rm.utilization, rm.allocatable, availableFormat)
 }
 
-func resourceString(actual, allocatable resource.Quantity, resourceType string) string {
-	utilPercent := float64(0)
+func resourceString(actual, allocatable resource.Quantity, availableFormat bool) string {
+	utilPercent := int64(0)
 	if allocatable.MilliValue() > 0 {
-		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
+		utilPercent = int64(float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100)
 	}
-
-	if resourceType == "cpu" {
-		return fmt.Sprintf("%dm (%d", actual.MilliValue(), int64(utilPercent)) + "%%)"
+	if availableFormat {
+		// performs rounding on BinarySI to make sure units are the same
+		if allocatable.Format == resource.BinarySI {
+			allocatable.SetMilli(actual.MilliValue() * utilPercent)
+		}
+		return fmt.Sprintf("%s/%s", actual.String(), allocatable.String())
 	}
+	return fmt.Sprintf("%s (%d%%%%)", actual.String(), utilPercent)
 
-	return fmt.Sprintf("%dMi (%d", actual.Value()/1048576, int64(utilPercent)) + "%%)"
 }
 
 // NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.
@@ -324,11 +327,11 @@ func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
 	switch rm.resourceType {
 	case "cpu":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%dm", r.MilliValue())
+			return fmt.Sprintf("%s", r.String())
 		}
 	case "memory":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%dMi", r.Value()/1048576)
+			return fmt.Sprintf("%s", r.String())
 		}
 	}
 	return f

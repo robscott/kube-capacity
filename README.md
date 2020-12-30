@@ -62,6 +62,19 @@ example-node-1    220m (22%)      10m (1%)      10m (1%)    192Mi (6%)         3
 example-node-2    340m (34%)      120m (12%)    30m (3%)    380Mi (13%)        410Mi (14%)     260Mi (9%)
 ```
 
+### Displaying Available Resources
+To more clearly see the total available resources on the node it is possible to pass the `--available` option
+to kube-capacity, which will give output in the following format
+
+```
+kube-capacity --available
+
+NODE              CPU REQUESTS    CPU LIMITS    MEMORY REQUESTS    MEMORY LIMITS
+*                 560/2000m       130/2000m     572/5923Mi         770/5923Mi 
+example-node-1    220/1000m       10/1000m      192/3200Mi         360/3200Mi 
+example-node-2    340/1000m       120/1000m     380/2923Mi         410/2923Mi
+```
+
 ### Including Pods and Utilization
 For more detailed output, kube-capacity can include both pods and resource utilization in the output. When `--util` and `--pods` are passed to kube-capacity, it will result in a wide output that looks like this:
 
@@ -120,6 +133,7 @@ kube-capacity --pods --containers --util --output yaml
   -o, --output string             output format for information
                                     (supports: [table json yaml])
                                     (default "table")
+  -a, --available                 includes quantity available instead of percentage used
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
       --sort string               attribute to sort results be (supports:
@@ -143,6 +157,7 @@ Although this project was originally developed by [robscott](https://github.com/
 
 - [endzyme](https://github.com/endzyme)
 - [justinbarrick](https://github.com/justinbarrick)
+- [Padarn](https://github.com/Padarn)
 
 ## License
 Apache License 2.0
