@@ -1,6 +1,13 @@
 builds:
 - env:
   - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarm:
+  - 6
+  - 7
 archives:
   - replacements:
       darwin: Darwin
@@ -19,10 +26,17 @@ changelog:
     - '^docs:'
     - '^test:'
 brews:
-  - github:
-      owner: robscott
-      name: homebrew-tap
-    folder: Formula
-    description: kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster
-    test: |
-      system "#{bin}/kube-capacity version"  
+- name: homebrew-tap
+  tap:
+    # The token determines the release type (Github/Gitlab).
+    owner: robscott
+    name: homebrew-tap
+  folder: Formula
+  # Brew fails from multiple 32-bit arm versions.
+  # Specify which version should be used.
+  goarm: 6
+  homepage: https://github.com/robscott/kube-capacity
+  license: apache-2.0
+  description: kube-capacity provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster
+  test: |
+    system "#{bin}/kube-capacity version"  
