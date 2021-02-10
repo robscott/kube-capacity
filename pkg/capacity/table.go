@@ -26,6 +26,7 @@ type tablePrinter struct {
 	showPods        bool
 	showUtil        bool
 	showContainers  bool
+	showNamespace   bool
 	sortBy          string
 	w               *tabwriter.Writer
 	availableFormat bool
@@ -100,7 +101,9 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 	lineItems := []string{tl.node}
 
 	if tp.showContainers || tp.showPods {
-		lineItems = append(lineItems, tl.namespace)
+		if tp.showNamespace {
+			lineItems = append(lineItems, tl.namespace)
+		}
 		lineItems = append(lineItems, tl.pod)
 	}
 
