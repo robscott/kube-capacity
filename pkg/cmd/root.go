@@ -68,7 +68,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&namespaceLabels,
 		"namespace-labels", "", "", "labels to filter namespaces with")
 	rootCmd.PersistentFlags().StringVarP(&namespace,
-		"namespace", "n", "", "only this namespace (default: all)")
+		"namespace", "n", "", "only include pods from this namespace")
 	rootCmd.PersistentFlags().StringVarP(&kubeContext,
 		"context", "", "", "context to use for Kubernetes config")
 	rootCmd.PersistentFlags().StringVarP(&sortBy,
