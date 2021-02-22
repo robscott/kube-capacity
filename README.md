@@ -112,6 +112,7 @@ For more advanced usage, kube-capacity also supports filtering by pod, namespace
 
 ```
 kube-capacity --pod-labels app=nginx
+kube-capacity --namespace default
 kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
 ```
@@ -128,8 +129,8 @@ kube-capacity --pods --containers --util --output yaml
   -c, --containers                includes containers in output
       --context string            context to use for Kubernetes config
   -h, --help                      help for kube-capacity
-  -n, --namespace-labels string   labels to filter namespaces with
-      --node-labels string        labels to filter nodes with
+  -n, --namespace string          only include pods from this namespace
+      --namespace-labels string   labels to filter namespaces with
   -o, --output string             output format for information
                                     (supports: [table json yaml])
                                     (default "table")
@@ -158,6 +159,7 @@ Although this project was originally developed by [robscott](https://github.com/
 - [endzyme](https://github.com/endzyme)
 - [justinbarrick](https://github.com/justinbarrick)
 - [Padarn](https://github.com/Padarn)
+- [nickatsegment](https://github.com/nickatsegment)
 
 ## License
 Apache License 2.0
