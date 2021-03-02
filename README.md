@@ -131,6 +131,7 @@ kube-capacity --pods --containers --util --output yaml
   -h, --help                      help for kube-capacity
   -n, --namespace string          only include pods from this namespace
       --namespace-labels string   labels to filter namespaces with
+      --node-labels string        labels to filter nodes with
   -o, --output string             output format for information
                                     (supports: [table json yaml])
                                     (default "table")
