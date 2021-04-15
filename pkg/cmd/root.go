@@ -30,6 +30,7 @@ var nodeLabels string
 var namespaceLabels string
 var namespace string
 var kubeContext string
+var kubeConfig string
 var outputFormat string
 var sortBy string
 var availableFormat bool
@@ -48,7 +49,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(showContainers, showPods, showUtil, availableFormat, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, outputFormat, sortBy)
+		capacity.FetchAndPrint(showContainers, showPods, showUtil, availableFormat, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, outputFormat, sortBy)
 	},
 }
 
@@ -71,6 +72,8 @@ func init() {
 		"namespace", "n", "", "only include pods from this namespace")
 	rootCmd.PersistentFlags().StringVarP(&kubeContext,
 		"context", "", "", "context to use for Kubernetes config")
+	rootCmd.PersistentFlags().StringVarP(&kubeConfig,
+		"kubeconfig", "", "", "kubeconfig file to use for Kubernetes config")
 	rootCmd.PersistentFlags().StringVarP(&sortBy,
 		"sort", "", "name",
 		fmt.Sprintf("attribute to sort results be (supports: %v)", capacity.SupportedSortAttributes))
