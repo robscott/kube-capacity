@@ -25,8 +25,8 @@ import (
 )
 
 // NewClientSet returns a new Kubernetes clientset
-func NewClientSet(kubeContext string) (*kubernetes.Clientset, error) {
-	config, err := getKubeConfig(kubeContext)
+func NewClientSet(kubeContext, kubeConfig string) (*kubernetes.Clientset, error) {
+	config, err := getKubeConfig(kubeContext, kubeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +35,8 @@ func NewClientSet(kubeContext string) (*kubernetes.Clientset, error) {
 }
 
 // NewMetricsClientSet returns a new clientset for Kubernetes metrics
-func NewMetricsClientSet(kubeContext string) (*metrics.Clientset, error) {
-	config, err := getKubeConfig(kubeContext)
+func NewMetricsClientSet(kubeContext, kubeConfig string) (*metrics.Clientset, error) {
+	config, err := getKubeConfig(kubeContext, kubeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +44,13 @@ func NewMetricsClientSet(kubeContext string) (*metrics.Clientset, error) {
 	return metrics.NewForConfig(config)
 }
 
-func getKubeConfig(kubeContext string) (*rest.Config, error) {
+func getKubeConfig(kubeContext, kubeConfig string) (*rest.Config, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if kubeConfig != "" {
+		loadingRules.ExplicitPath = kubeConfig
+	}
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		clientcmd.NewDefaultClientConfigLoadingRules(),
+		loadingRules,
 		&clientcmd.ConfigOverrides{CurrentContext: kubeContext},
 	).ClientConfig()
 }

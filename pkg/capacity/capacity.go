@@ -29,8 +29,8 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(showContainers, showPods, showUtil, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, output, sortBy string) {
-	clientset, err := kube.NewClientSet(kubeContext)
+func FetchAndPrint(showContainers, showPods, showUtil, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, output, sortBy string) {
+	clientset, err := kube.NewClientSet(kubeContext, kubeConfig)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)
@@ -41,7 +41,7 @@ func FetchAndPrint(showContainers, showPods, showUtil, availableFormat bool, pod
 	nmList := &v1beta1.NodeMetricsList{}
 
 	if showUtil {
-		mClientset, err := kube.NewMetricsClientSet(kubeContext)
+		mClientset, err := kube.NewMetricsClientSet(kubeContext, kubeConfig)
 		if err != nil {
 			fmt.Printf("Error connecting to Metrics API: %v\n", err)
 			os.Exit(4)
