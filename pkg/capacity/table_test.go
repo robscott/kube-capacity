@@ -25,18 +25,21 @@ func TestGetLineItems(t *testing.T) {
 		showPods:       false,
 		showUtil:       false,
 		showContainers: false,
+		showNamespace:  false,
 	}
 
 	tpSome := &tablePrinter{
 		showPods:       false,
 		showUtil:       false,
 		showContainers: true,
+		showNamespace:  true,
 	}
 
 	tpAll := &tablePrinter{
 		showPods:       true,
 		showUtil:       true,
 		showContainers: true,
+		showNamespace:  true,
 	}
 
 	tl := &tableLine{
@@ -105,8 +108,7 @@ func TestGetLineItems(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			lineItems := tc.tp.getLineItems(tl)
-			assert.Len(t, lineItems, len(tc.expected))
-			assert.ElementsMatch(t, lineItems, tc.expected)
+			assert.ElementsMatchf(t, lineItems, tc.expected, "Expected: %+v\nGot:      %+v", tc.expected, lineItems)
 		})
 	}
 }
