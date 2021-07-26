@@ -5,6 +5,10 @@ builds:
   - linux
   - darwin
   - windows
+  goarch:
+  - arm64
+  - amd64
+  - 386
   goarm:
   - 6
   - 7

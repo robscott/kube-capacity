@@ -18,6 +18,15 @@ spec:
     {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Darwin_x86_64.tar.gz" .TagName }}    
   - selector:
       matchLabels:
+        os: darwin
+        arch: arm64
+    bin: kube-capacity
+    files:
+    - from: "*"
+      to: "."
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Darwin_arm64.tar.gz" .TagName }}
+  - selector:
+      matchLabels:
         os: linux
         arch: amd64
     bin: kube-capacity
