@@ -307,18 +307,32 @@ func (rm *resourceMetric) utilString(availableFormat bool) string {
 }
 
 func resourceString(actual, allocatable resource.Quantity, availableFormat bool) string {
-	utilPercent := int64(0)
+	utilPercent := float64(0)
 	if allocatable.MilliValue() > 0 {
-		utilPercent = int64(float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100)
+		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
 	}
+
+	var actualStr, allocatableStr string
+
 	if availableFormat {
-		// performs rounding on BinarySI to make sure units are the same
-		if allocatable.Format == resource.BinarySI {
-			allocatable.SetMilli(actual.MilliValue() * utilPercent)
+		if actual.Format == resource.DecimalSI {
+			actualStr = fmt.Sprintf("%dm", allocatable.MilliValue() - actual.MilliValue())
+			allocatableStr = fmt.Sprintf("%dm", allocatable.MilliValue())
+		} else {
+			actualStr = fmt.Sprintf("%dMi", allocatable.ScaledValue(resource.Mega)-actual.ScaledValue(resource.Mega))
+			allocatableStr = fmt.Sprintf("%dMi", allocatable.ScaledValue(resource.Mega))
 		}
-		return fmt.Sprintf("%s/%s", actual.String(), allocatable.String())
+	
+		return fmt.Sprintf("%s/%s", actualStr, allocatableStr)
 	}
-	return fmt.Sprintf("%s (%d%%%%)", actual.String(), utilPercent)
+
+	if actual.Format == resource.DecimalSI {
+		actualStr = fmt.Sprintf("%dm", actual.MilliValue())
+	} else {
+		actualStr = fmt.Sprintf("%dMi", actual.ScaledValue(resource.Mega))
+	}
+
+	return fmt.Sprintf("%s (%d%%%%)", actualStr, int64(utilPercent))
 
 }
 
