@@ -31,7 +31,7 @@ jobs:
     docker:
       - image: circleci/golang:1.16
         environment:
-          KREW_RELEASE_BOT_VERSION: v0.0.35
+          KREW_RELEASE_BOT_VERSION: v0.0.40
     steps:
       - checkout
       - run: |
