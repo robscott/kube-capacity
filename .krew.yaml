@@ -1,13 +1,3 @@
-{{- /* To test this krew-release-bot template before committing it:
-  # Replace 0.6.1 below with the current kube-capacity version.
-  # Replace 0.0.40 below with the current version of the krew-release-bot used
-  # in the .circleci/config.yml file.
-  $ docker run -v `pwd`/.krew.yaml:/tmp/template.yaml rajatjindal/krew-release-bot:v0.0.40 krew-release-bot template --tag 0.6.1 --template-file /tmp/template.yaml >dist/krew.yaml
-  # Use krew to install via the krew manifest created above:
-  $ kubectl krew install --manifest=dist/krew.yaml 
-  # Alternatively, test krew downloading different OS and architecture combinations with:
-  $ KREW_OS=windows KREW_ARCH=amd64 kubectl krew install --manifest=dist/krew.yaml
-*/ -}}
 apiVersion: krew.googlecontainertools.github.com/v1alpha2
 kind: Plugin
 metadata:
