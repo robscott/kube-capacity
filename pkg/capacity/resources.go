@@ -54,6 +54,7 @@ type nodeMetric struct {
 	cpu        *resourceMetric
 	memory     *resourceMetric
 	podMetrics map[string]*podMetric
+	podCount   string
 }
 
 type podMetric struct {
@@ -79,6 +80,14 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	}
 
 	for _, node := range nodeList.Items {
+		var tmpPodCount int
+		for _, pod := range podList.Items {
+			if pod.Spec.NodeName == node.Name {
+				tmpPodCount++
+			}
+		}
+		podCount := fmt.Sprintf("%d/%d", tmpPodCount, node.Status.Allocatable.Pods().Value())
+
 		cm.nodeMetrics[node.Name] = &nodeMetric{
 			name: node.Name,
 			cpu: &resourceMetric{
@@ -90,6 +99,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				allocatable:  node.Status.Allocatable["memory"],
 			},
 			podMetrics: map[string]*podMetric{},
+			podCount: podCount,
 		}
 	}
 
@@ -316,13 +326,13 @@ func resourceString(actual, allocatable resource.Quantity, availableFormat bool)
 
 	if availableFormat {
 		if actual.Format == resource.DecimalSI {
-			actualStr = fmt.Sprintf("%dm", allocatable.MilliValue() - actual.MilliValue())
+			actualStr = fmt.Sprintf("%dm", allocatable.MilliValue()-actual.MilliValue())
 			allocatableStr = fmt.Sprintf("%dm", allocatable.MilliValue())
 		} else {
 			actualStr = fmt.Sprintf("%dMi", allocatable.ScaledValue(resource.Mega)-actual.ScaledValue(resource.Mega))
 			allocatableStr = fmt.Sprintf("%dMi", allocatable.ScaledValue(resource.Mega))
 		}
-	
+
 		return fmt.Sprintf("%s/%s", actualStr, allocatableStr)
 	}
 

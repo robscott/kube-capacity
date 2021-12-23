@@ -54,7 +54,7 @@ func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFo
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
 	showNamespace := namespace == ""
 
-	printList(&cm, showContainers, showPods, showUtil, showNamespace, output, sortBy, availableFormat)
+	printList(&cm, showContainers, showPods, showUtil, showPodCount, showNamespace, output, sortBy, availableFormat)
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
