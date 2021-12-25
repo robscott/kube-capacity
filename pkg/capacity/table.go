@@ -44,7 +44,7 @@ type tableLine struct {
 	memoryRequests string
 	memoryLimits   string
 	memoryUtil     string
-	podCount	   string
+	podCount       string
 }
 
 var headerStrings = tableLine{
@@ -147,6 +147,7 @@ func (tp *tablePrinter) printClusterLine() {
 		memoryRequests: tp.cm.memory.requestString(tp.availableFormat),
 		memoryLimits:   tp.cm.memory.limitString(tp.availableFormat),
 		memoryUtil:     tp.cm.memory.utilString(tp.availableFormat),
+		podCount:       tp.cm.podCount,
 	})
 }
 
