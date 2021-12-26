@@ -45,6 +45,7 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showPods:       showPods,
 			showUtil:       showUtil,
 			showContainers: showContainers,
+			showPodCount:   showPodCount,
 			sortBy:         sortBy,
 		}
 		lp.Print(output)
