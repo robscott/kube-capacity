@@ -27,7 +27,6 @@ import (
 
 func TestBuildListClusterMetricsNoOptions(t *testing.T) {
 	cm := getTestClusterMetric()
-	cm.podCount = "60/660"
 
 	lp := listPrinter{
 		cm: &cm,
@@ -48,7 +47,6 @@ func TestBuildListClusterMetricsNoOptions(t *testing.T) {
 			Limits:      "580Mi",
 			LimitsPct:   "14%",
 		},
-		PodCount: "60/660",
 	}, lcm.ClusterTotals)
 
 	assert.EqualValues(t, &listNodeMetric{
@@ -65,7 +63,6 @@ func TestBuildListClusterMetricsNoOptions(t *testing.T) {
 			Limits:      "580Mi",
 			LimitsPct:   "14%",
 		},
-		PodCount: "1/110",
 	}, lcm.Nodes[0])
 
 }
@@ -184,7 +181,7 @@ func TestBuildListClusterMetricsAllOptions(t *testing.T) {
 }
 
 func getTestClusterMetric() clusterMetric {
-	cm := buildClusterMetric(
+	return buildClusterMetric(
 		&corev1.PodList{
 			Items: []corev1.Pod{
 				{
@@ -278,6 +275,4 @@ func getTestClusterMetric() clusterMetric {
 			},
 		},
 	)
-	cm.podCount = "1/110"
-	return cm
 }
