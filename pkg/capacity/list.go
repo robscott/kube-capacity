@@ -106,7 +106,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 	}
 
 	if lp.showPodCount {
-		response.ClusterTotals.PodCount = lp.cm.podCount
+		response.ClusterTotals.PodCount = lp.cm.podCount.podCountString()
 	}
 
 	for _, nodeMetric := range lp.cm.getSortedNodeMetrics(lp.sortBy) {
@@ -116,7 +116,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 		node.Memory = lp.buildListResourceOutput(nodeMetric.memory)
 
 		if lp.showPodCount {
-			node.PodCount = nodeMetric.podCount
+			node.PodCount = nodeMetric.podCount.podCountString()
 		}
 
 		if lp.showPods || lp.showContainers {

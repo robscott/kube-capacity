@@ -147,7 +147,7 @@ func (tp *tablePrinter) printClusterLine() {
 		memoryRequests: tp.cm.memory.requestString(tp.availableFormat),
 		memoryLimits:   tp.cm.memory.limitString(tp.availableFormat),
 		memoryUtil:     tp.cm.memory.utilString(tp.availableFormat),
-		podCount:       tp.cm.podCount,
+		podCount:       tp.cm.podCount.podCountString(),
 	})
 }
 
@@ -163,7 +163,7 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		memoryRequests: nm.memory.requestString(tp.availableFormat),
 		memoryLimits:   nm.memory.limitString(tp.availableFormat),
 		memoryUtil:     nm.memory.utilString(tp.availableFormat),
-		podCount:       nm.podCount,
+		podCount:       nm.podCount.podCountString(),
 	})
 }
 

@@ -47,7 +47,7 @@ type clusterMetric struct {
 	cpu         *resourceMetric
 	memory      *resourceMetric
 	nodeMetrics map[string]*nodeMetric
-	podCount    string
+	podCount    podCount
 }
 
 type nodeMetric struct {
@@ -55,7 +55,7 @@ type nodeMetric struct {
 	cpu        *resourceMetric
 	memory     *resourceMetric
 	podMetrics map[string]*podMetric
-	podCount   string
+	podCount   *podCount
 }
 
 type podMetric struct {
@@ -70,6 +70,15 @@ type containerMetric struct {
 	name   string
 	cpu    *resourceMetric
 	memory *resourceMetric
+}
+
+type podCount struct {
+	current 	int
+	allocatable int64
+}
+
+func (pc *podCount) podCountString() string {
+	return fmt.Sprintf("%d/%d", pc.current, pc.allocatable)
 }
 
 func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
@@ -88,9 +97,8 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				tmpPodCount++
 			}
 		}
-		podCount := fmt.Sprintf("%d/%d", tmpPodCount, node.Status.Allocatable.Pods().Value())
-		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 
+		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 		cm.nodeMetrics[node.Name] = &nodeMetric{
 			name: node.Name,
 			cpu: &resourceMetric{
@@ -102,11 +110,15 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				allocatable:  node.Status.Allocatable["memory"],
 			},
 			podMetrics: map[string]*podMetric{},
-			podCount:   podCount,
+			podCount: &podCount{
+				current:     tmpPodCount,
+				allocatable: node.Status.Allocatable.Pods().Value(),
+			},
 		}
 	}
 
-	cm.podCount = fmt.Sprintf("%d/%d", len(podList.Items), totalPodAllocatable)
+	cm.podCount.current = len(podList.Items)
+	cm.podCount.allocatable = totalPodAllocatable
 
 	for _, nm := range nmList.Items {
 		cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
