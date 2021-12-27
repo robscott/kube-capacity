@@ -55,7 +55,7 @@ type nodeMetric struct {
 	cpu        *resourceMetric
 	memory     *resourceMetric
 	podMetrics map[string]*podMetric
-	podCount   *podCount
+	podCount   podCount
 }
 
 type podMetric struct {
@@ -110,7 +110,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				allocatable:  node.Status.Allocatable["memory"],
 			},
 			podMetrics: map[string]*podMetric{},
-			podCount: &podCount{
+			podCount: podCount{
 				current:     tmpPodCount,
 				allocatable: node.Status.Allocatable.Pods().Value(),
 			},
