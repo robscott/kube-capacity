@@ -47,7 +47,7 @@ type clusterMetric struct {
 	cpu         *resourceMetric
 	memory      *resourceMetric
 	nodeMetrics map[string]*nodeMetric
-	podCount    podCount
+	podCount    *podCount
 }
 
 type nodeMetric struct {
@@ -55,7 +55,7 @@ type nodeMetric struct {
 	cpu        *resourceMetric
 	memory     *resourceMetric
 	podMetrics map[string]*podMetric
-	podCount   podCount
+	podCount   *podCount
 }
 
 type podMetric struct {
@@ -73,12 +73,8 @@ type containerMetric struct {
 }
 
 type podCount struct {
-	current 	int
+	current     int
 	allocatable int64
-}
-
-func (pc *podCount) podCountString() string {
-	return fmt.Sprintf("%d/%d", pc.current, pc.allocatable)
 }
 
 func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
@@ -87,6 +83,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 		cpu:         &resourceMetric{resourceType: "cpu"},
 		memory:      &resourceMetric{resourceType: "memory"},
 		nodeMetrics: map[string]*nodeMetric{},
+		podCount:    &podCount{},
 	}
 
 	var totalPodAllocatable int64
@@ -110,7 +107,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				allocatable:  node.Status.Allocatable["memory"],
 			},
 			podMetrics: map[string]*podMetric{},
-			podCount: podCount{
+			podCount: &podCount{
 				current:     tmpPodCount,
 				allocatable: node.Status.Allocatable.Pods().Value(),
 			},
@@ -331,6 +328,11 @@ func (rm *resourceMetric) limitString(availableFormat bool) string {
 
 func (rm *resourceMetric) utilString(availableFormat bool) string {
 	return resourceString(rm.utilization, rm.allocatable, availableFormat)
+}
+
+// podCountString returns the string representation of podCount struct, example: "15/110"
+func (pc *podCount) podCountString() string {
+	return fmt.Sprintf("%d/%d", pc.current, pc.allocatable)
 }
 
 func resourceString(actual, allocatable resource.Quantity, availableFormat bool) string {
