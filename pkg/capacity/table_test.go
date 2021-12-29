@@ -24,6 +24,7 @@ func TestGetLineItems(t *testing.T) {
 	tpNone := &tablePrinter{
 		showPods:       false,
 		showUtil:       false,
+		showPodCount:   false,
 		showContainers: false,
 		showNamespace:  false,
 	}
@@ -31,6 +32,7 @@ func TestGetLineItems(t *testing.T) {
 	tpSome := &tablePrinter{
 		showPods:       false,
 		showUtil:       false,
+		showPodCount:   false,
 		showContainers: true,
 		showNamespace:  true,
 	}
@@ -40,6 +42,7 @@ func TestGetLineItems(t *testing.T) {
 		showUtil:       true,
 		showContainers: true,
 		showNamespace:  true,
+		showPodCount:   true,
 	}
 
 	tl := &tableLine{
@@ -53,6 +56,7 @@ func TestGetLineItems(t *testing.T) {
 		memoryRequests: "1000Mi",
 		memoryLimits:   "2000Mi",
 		memoryUtil:     "326Mi",
+		podCount:       "1/110",
 	}
 
 	var testCases = []struct {
@@ -101,6 +105,7 @@ func TestGetLineItems(t *testing.T) {
 				"1000Mi",
 				"2000Mi",
 				"326Mi",
+				"1/110",
 			},
 		},
 	}
