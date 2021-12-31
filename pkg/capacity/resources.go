@@ -35,6 +35,8 @@ var SupportedSortAttributes = [...]string{
 	"name",
 }
 
+const ONE_MiB = 1024 * 1024
+
 type resourceMetric struct {
 	resourceType string
 	allocatable  resource.Quantity
@@ -316,24 +318,32 @@ func resourceString(actual, allocatable resource.Quantity, availableFormat bool)
 
 	if availableFormat {
 		if actual.Format == resource.DecimalSI {
-			actualStr = fmt.Sprintf("%dm", allocatable.MilliValue() - actual.MilliValue())
+			actualStr = fmt.Sprintf("%dm", allocatable.MilliValue()-actual.MilliValue())
 			allocatableStr = fmt.Sprintf("%dm", allocatable.MilliValue())
 		} else {
-			actualStr = fmt.Sprintf("%dMi", allocatable.ScaledValue(resource.Mega)-actual.ScaledValue(resource.Mega))
-			allocatableStr = fmt.Sprintf("%dMi", allocatable.ScaledValue(resource.Mega))
+			actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
+			allocatableStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable))
 		}
-	
+
 		return fmt.Sprintf("%s/%s", actualStr, allocatableStr)
 	}
 
 	if actual.Format == resource.DecimalSI {
 		actualStr = fmt.Sprintf("%dm", actual.MilliValue())
 	} else {
-		actualStr = fmt.Sprintf("%dMi", actual.ScaledValue(resource.Mega))
+		actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(actual))
 	}
 
 	return fmt.Sprintf("%s (%d%%%%)", actualStr, int64(utilPercent))
 
+}
+
+func formatToMegiBytes(actual resource.Quantity) int64 {
+	value := actual.Value() / ONE_MiB
+	if actual.Value()%ONE_MiB != 0 {
+		value++
+	}
+	return value
 }
 
 // NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.
