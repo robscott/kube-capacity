@@ -75,6 +75,7 @@ func TestBuildListClusterMetricsAllOptions(t *testing.T) {
 		showUtil:       true,
 		showPods:       true,
 		showContainers: true,
+		showPodCount:   true,
 	}
 
 	lcm := lp.buildListClusterMetrics()
@@ -96,10 +97,12 @@ func TestBuildListClusterMetricsAllOptions(t *testing.T) {
 			Utilization:    "439Mi",
 			UtilizationPct: "10%",
 		},
+		PodCount: "1/110",
 	}, lcm.ClusterTotals)
 
 	assert.EqualValues(t, &listNodeMetric{
-		Name: "example-node-1",
+		Name:     "example-node-1",
+		PodCount: "1/110",
 		CPU: &listResourceOutput{
 			Requests:       "650m",
 			RequestsPct:    "65%",
@@ -177,7 +180,6 @@ func TestBuildListClusterMetricsAllOptions(t *testing.T) {
 				},
 			},
 		}}, lcm.Nodes[0])
-
 }
 
 func getTestClusterMetric() clusterMetric {
@@ -257,6 +259,7 @@ func getTestClusterMetric() clusterMetric {
 						Allocatable: corev1.ResourceList{
 							"cpu":    resource.MustParse("1000m"),
 							"memory": resource.MustParse("4000Mi"),
+							"pods":   resource.MustParse("110"),
 						},
 					},
 				},

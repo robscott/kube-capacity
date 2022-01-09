@@ -47,6 +47,7 @@ func TestBuildClusterMetricEmpty(t *testing.T) {
 			utilization:  resource.Quantity{},
 		},
 		nodeMetrics: map[string]*nodeMetric{},
+		podCount:    &podCount{},
 	}
 
 	assert.EqualValues(t, cm, expected)

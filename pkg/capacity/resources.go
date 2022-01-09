@@ -49,6 +49,7 @@ type clusterMetric struct {
 	cpu         *resourceMetric
 	memory      *resourceMetric
 	nodeMetrics map[string]*nodeMetric
+	podCount    *podCount
 }
 
 type nodeMetric struct {
@@ -56,6 +57,7 @@ type nodeMetric struct {
 	cpu        *resourceMetric
 	memory     *resourceMetric
 	podMetrics map[string]*podMetric
+	podCount   *podCount
 }
 
 type podMetric struct {
@@ -72,15 +74,30 @@ type containerMetric struct {
 	memory *resourceMetric
 }
 
+type podCount struct {
+	current     int
+	allocatable int64
+}
+
 func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	nodeList *corev1.NodeList, nmList *v1beta1.NodeMetricsList) clusterMetric {
 	cm := clusterMetric{
 		cpu:         &resourceMetric{resourceType: "cpu"},
 		memory:      &resourceMetric{resourceType: "memory"},
 		nodeMetrics: map[string]*nodeMetric{},
+		podCount:    &podCount{},
 	}
 
+	var totalPodAllocatable int64
 	for _, node := range nodeList.Items {
+		var tmpPodCount int
+		for _, pod := range podList.Items {
+			if pod.Spec.NodeName == node.Name {
+				tmpPodCount++
+			}
+		}
+
+		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 		cm.nodeMetrics[node.Name] = &nodeMetric{
 			name: node.Name,
 			cpu: &resourceMetric{
@@ -92,8 +109,15 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				allocatable:  node.Status.Allocatable["memory"],
 			},
 			podMetrics: map[string]*podMetric{},
+			podCount: &podCount{
+				current:     tmpPodCount,
+				allocatable: node.Status.Allocatable.Pods().Value(),
+			},
 		}
 	}
+
+	cm.podCount.current = len(podList.Items)
+	cm.podCount.allocatable = totalPodAllocatable
 
 	for _, nm := range nmList.Items {
 		cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
@@ -306,6 +330,11 @@ func (rm *resourceMetric) limitString(availableFormat bool) string {
 
 func (rm *resourceMetric) utilString(availableFormat bool) string {
 	return resourceString(rm.utilization, rm.allocatable, availableFormat)
+}
+
+// podCountString returns the string representation of podCount struct, example: "15/110"
+func (pc *podCount) podCountString() string {
+	return fmt.Sprintf("%d/%d", pc.current, pc.allocatable)
 }
 
 func resourceString(actual, allocatable resource.Quantity, availableFormat bool) string {

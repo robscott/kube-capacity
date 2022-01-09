@@ -107,6 +107,17 @@ example-node-2    340m (34%)      120m (12%)    30m (3%)    380Mi (13%)        4
 example-node-1    220m (22%)      10m (1%)      10m (1%)    192Mi (6%)         360Mi (12%)     210Mi (7%)
 ```
 
+### Displaying Pod Count
+To display the pod count of each node and the whole cluster, you can pass **--pod-count** argument:
+```shell
+$ kube-capacity --pod-count
+
+NODE           CPU REQUESTS   CPU LIMITS   MEMORY REQUESTS   MEMORY LIMITS   POD COUNT
+*              950m (2%)      200m (0%)    284Mi (0%)        284Mi (0%)      10/220
+minikube       850m (5%)      100m (0%)    231Mi (1%)        231Mi (1%)      8/110
+minikube-m02   100m (0%)      100m (0%)    53Mi (0%)         53Mi (0%)       2/110
+```
+
 ### Filtering By Labels
 For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels. The following examples show how to use these filters:
 
@@ -142,6 +153,7 @@ kube-capacity --pods --containers --util --output yaml
                                     [cpu.util cpu.request cpu.limit mem.util mem.request mem.limit name])
                                     (default "name")
   -u, --util                      includes resource utilization in output
+      --pod-count                 includes pod counts for each of the nodes and the whole cluster
 ```
 
 ## Prerequisites
