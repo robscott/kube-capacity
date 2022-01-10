@@ -37,8 +37,8 @@ func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFo
 	}
 
 	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, namespaceLabels, namespace)
-	pmList := &v1beta1.PodMetricsList{}
-	nmList := &v1beta1.NodeMetricsList{}
+	var pmList *v1beta1.PodMetricsList
+	var nmList *v1beta1.NodeMetricsList
 
 	if showUtil {
 		mClientset, err := kube.NewMetricsClientSet(kubeContext, kubeConfig)
@@ -48,7 +48,9 @@ func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFo
 		}
 
 		pmList = getPodMetrics(mClientset, namespace)
-		nmList = getNodeMetrics(mClientset, nodeLabels)
+		if namespace == "" && namespaceLabels == "" {
+			nmList = getNodeMetrics(mClientset, nodeLabels)
+		}
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
