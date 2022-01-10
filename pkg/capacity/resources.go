@@ -35,7 +35,8 @@ var SupportedSortAttributes = [...]string{
 	"name",
 }
 
-const ONE_MiB = 1024 * 1024
+// Mebibyte represents the number of bytes in a mebibyte.
+const Mebibyte = 1024 * 1024
 
 type resourceMetric struct {
 	resourceType string
@@ -119,14 +120,18 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	cm.podCount.current = len(podList.Items)
 	cm.podCount.allocatable = totalPodAllocatable
 
-	for _, nm := range nmList.Items {
-		cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
-		cm.nodeMetrics[nm.Name].memory.utilization = nm.Usage["memory"]
+	if nmList != nil {
+		for _, nm := range nmList.Items {
+			cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
+			cm.nodeMetrics[nm.Name].memory.utilization = nm.Usage["memory"]
+		}
 	}
 
 	podMetrics := map[string]v1beta1.PodMetrics{}
-	for _, pm := range pmList.Items {
-		podMetrics[fmt.Sprintf("%s-%s", pm.GetNamespace(), pm.GetName())] = pm
+	if pmList != nil {
+		for _, pm := range pmList.Items {
+			podMetrics[fmt.Sprintf("%s-%s", pm.GetNamespace(), pm.GetName())] = pm
+		}
 	}
 
 	for _, pod := range podList.Items {
@@ -136,9 +141,13 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	}
 
 	for _, node := range nodeList.Items {
-		nm := cm.nodeMetrics[node.Name]
-		if nm != nil {
-			cm.addNodeMetric(cm.nodeMetrics[node.Name])
+		if nm, ok := cm.nodeMetrics[node.Name]; ok {
+			cm.addNodeMetric(nm)
+			// When namespace filtering is configured, we want to sum pod
+			// utilization instead of relying on node util.
+			if nmList == nil {
+				nm.addPodUtilization()
+			}
 		}
 	}
 
@@ -286,6 +295,13 @@ func (nm *nodeMetric) getSortedPodMetrics(sortBy string) []*podMetric {
 	return sortedPodMetrics
 }
 
+func (nm *nodeMetric) addPodUtilization() {
+	for _, pm := range nm.podMetrics {
+		nm.cpu.utilization.Add(pm.cpu.utilization)
+		nm.memory.utilization.Add(pm.memory.utilization)
+	}
+}
+
 func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric {
 	sortedContainerMetrics := make([]*containerMetric, len(pm.containerMetrics))
 
@@ -368,8 +384,8 @@ func resourceString(actual, allocatable resource.Quantity, availableFormat bool)
 }
 
 func formatToMegiBytes(actual resource.Quantity) int64 {
-	value := actual.Value() / ONE_MiB
-	if actual.Value()%ONE_MiB != 0 {
+	value := actual.Value() / Mebibyte
+	if actual.Value()%Mebibyte != 0 {
 		value++
 	}
 	return value
@@ -380,11 +396,11 @@ func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
 	switch rm.resourceType {
 	case "cpu":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%s", r.String())
+			return fmt.Sprintf("%dm", r.MilliValue())
 		}
 	case "memory":
 		f = func(r resource.Quantity) string {
-			return fmt.Sprintf("%s", r.String())
+			return fmt.Sprintf("%dMi", formatToMegiBytes(r))
 		}
 	}
 	return f
