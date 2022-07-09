@@ -76,7 +76,7 @@ type containerMetric struct {
 }
 
 type podCount struct {
-	current     int
+	current     int64
 	allocatable int64
 }
 
@@ -90,14 +90,15 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	}
 
 	var totalPodAllocatable int64
+	var totalPodCurrent int64
 	for _, node := range nodeList.Items {
-		var tmpPodCount int
+		var tmpPodCount int64
 		for _, pod := range podList.Items {
-			if pod.Spec.NodeName == node.Name {
+			if pod.Spec.NodeName == node.Name && pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
 				tmpPodCount++
 			}
 		}
-
+		totalPodCurrent += tmpPodCount
 		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 		cm.nodeMetrics[node.Name] = &nodeMetric{
 			name: node.Name,
@@ -117,7 +118,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 		}
 	}
 
-	cm.podCount.current = len(podList.Items)
+	cm.podCount.current = totalPodCurrent
 	cm.podCount.allocatable = totalPodAllocatable
 
 	if nmList != nil {
