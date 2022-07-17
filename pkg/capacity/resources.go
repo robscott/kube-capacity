@@ -370,8 +370,8 @@ func resourceString(resourceType string, actual, allocatable resource.Quantity, 
 			actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
 			allocatableStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable))
 		default:
-			actualStr = fmt.Sprintf("%d", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
-			allocatableStr = fmt.Sprintf("%d", formatToMegiBytes(allocatable))
+			actualStr = fmt.Sprintf("%d", allocatable.Value()-actual.Value())
+			allocatableStr = fmt.Sprintf("%d", allocatable.Value())
 		}
 
 		return fmt.Sprintf("%s/%s", actualStr, allocatableStr)
@@ -383,7 +383,7 @@ func resourceString(resourceType string, actual, allocatable resource.Quantity, 
 	case "memory":
 		actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(actual))
 	default:
-		actualStr = fmt.Sprintf("%d", formatToMegiBytes(actual))
+		actualStr = fmt.Sprintf("%d", actual.Value())
 	}
 
 	return fmt.Sprintf("%s (%d%%%%)", actualStr, int64(utilPercent))
