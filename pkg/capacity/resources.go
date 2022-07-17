@@ -16,12 +16,11 @@ package capacity
 
 import (
 	"fmt"
-	"sort"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"sort"
 )
 
 // SupportedSortAttributes lists the valid sorting options
@@ -338,15 +337,15 @@ func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric
 }
 
 func (rm *resourceMetric) requestString(availableFormat bool) string {
-	return resourceString(rm.request, rm.allocatable, availableFormat)
+	return resourceString(rm.resourceType, rm.request, rm.allocatable, availableFormat)
 }
 
 func (rm *resourceMetric) limitString(availableFormat bool) string {
-	return resourceString(rm.limit, rm.allocatable, availableFormat)
+	return resourceString(rm.resourceType, rm.limit, rm.allocatable, availableFormat)
 }
 
 func (rm *resourceMetric) utilString(availableFormat bool) string {
-	return resourceString(rm.utilization, rm.allocatable, availableFormat)
+	return resourceString(rm.resourceType, rm.utilization, rm.allocatable, availableFormat)
 }
 
 // podCountString returns the string representation of podCount struct, example: "15/110"
@@ -354,7 +353,7 @@ func (pc *podCount) podCountString() string {
 	return fmt.Sprintf("%d/%d", pc.current, pc.allocatable)
 }
 
-func resourceString(actual, allocatable resource.Quantity, availableFormat bool) string {
+func resourceString(resourceType string, actual, allocatable resource.Quantity, availableFormat bool) string {
 	utilPercent := float64(0)
 	if allocatable.MilliValue() > 0 {
 		utilPercent = float64(actual.MilliValue()) / float64(allocatable.MilliValue()) * 100
@@ -363,21 +362,28 @@ func resourceString(actual, allocatable resource.Quantity, availableFormat bool)
 	var actualStr, allocatableStr string
 
 	if availableFormat {
-		if actual.Format == resource.DecimalSI {
+		switch resourceType {
+		case "cpu":
 			actualStr = fmt.Sprintf("%dm", allocatable.MilliValue()-actual.MilliValue())
 			allocatableStr = fmt.Sprintf("%dm", allocatable.MilliValue())
-		} else {
+		case "memory":
 			actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
 			allocatableStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable))
+		default:
+			actualStr = fmt.Sprintf("%d", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
+			allocatableStr = fmt.Sprintf("%d", formatToMegiBytes(allocatable))
 		}
 
 		return fmt.Sprintf("%s/%s", actualStr, allocatableStr)
 	}
 
-	if actual.Format == resource.DecimalSI {
+	switch resourceType {
+	case "cpu":
 		actualStr = fmt.Sprintf("%dm", actual.MilliValue())
-	} else {
+	case "memory":
 		actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(actual))
+	default:
+		actualStr = fmt.Sprintf("%d", formatToMegiBytes(actual))
 	}
 
 	return fmt.Sprintf("%s (%d%%%%)", actualStr, int64(utilPercent))
