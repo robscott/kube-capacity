@@ -92,7 +92,10 @@ func (tp *tablePrinter) Print() {
 		}
 	}
 
-	tp.w.Flush()
+	err := tp.w.Flush()
+	if err != nil {
+		fmt.Printf("Error writing to table: %s", err)
+	}
 }
 
 func (tp *tablePrinter) printLine(tl *tableLine) {
