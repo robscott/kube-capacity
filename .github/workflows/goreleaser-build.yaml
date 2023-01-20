@@ -1,10 +1,16 @@
-name: release
+name: goreleaser
 on:
   push:
     tags:
-      - "v*.*.*"
+      - v*
+    branches:
+      - master
+      - main
+  pull_request:
+permissions:
+  contents: read
 jobs:
-  goreleaser:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,8 +23,4 @@ jobs:
         uses: goreleaser/goreleaser-action@v1
         with:
           version: latest
-          args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Update new version in krew-index
-        uses: rajatjindal/krew-release-bot@v0.0.43
+          args: build --snapshot --rm-dist
