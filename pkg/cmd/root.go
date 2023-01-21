@@ -80,7 +80,7 @@ func init() {
 		"kubeconfig", "", "", "kubeconfig file to use for Kubernetes config")
 	rootCmd.PersistentFlags().StringVarP(&sortBy,
 		"sort", "", "name",
-		fmt.Sprintf("attribute to sort results be (supports: %v)", capacity.SupportedSortAttributes))
+		fmt.Sprintf("attribute to sort results by (supports: %v)", capacity.SupportedSortAttributes))
 
 	rootCmd.PersistentFlags().StringVarP(&outputFormat,
 		"output", "o", capacity.TableOutput,
