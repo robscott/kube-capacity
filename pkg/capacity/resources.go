@@ -32,6 +32,12 @@ var SupportedSortAttributes = [...]string{
 	"mem.util",
 	"mem.request",
 	"mem.limit",
+	"cpu.util.percentage",
+	"cpu.request.percentage",
+	"cpu.limit.percentage",
+	"mem.util.percentage",
+	"mem.request.percentage",
+	"mem.limit.percentage",
 	"name",
 }
 
@@ -254,6 +260,18 @@ func (cm *clusterMetric) getSortedNodeMetrics(sortBy string) []*nodeMetric {
 			return m2.memory.limit.Value() < m1.memory.limit.Value()
 		case "mem.request":
 			return m2.memory.request.Value() < m1.memory.request.Value()
+		case "cpu.util.percentage":
+			return m2.cpu.percent(m2.cpu.utilization) < m1.cpu.percent(m1.cpu.utilization)
+		case "cpu.limit.percentage":
+			return m2.cpu.percent(m2.cpu.limit) < m1.cpu.percent(m1.cpu.limit)
+		case "cpu.request.percentage":
+			return m2.cpu.percent(m2.cpu.request) < m1.cpu.percent(m1.cpu.request)
+		case "mem.util.percentage":
+			return m2.memory.percent(m2.memory.utilization) < m1.memory.percent(m1.memory.utilization)
+		case "mem.limit.percentage":
+			return m2.memory.percent(m2.memory.limit) < m1.memory.percent(m1.memory.limit)
+		case "mem.request.percentage":
+			return m2.memory.percent(m2.memory.request) < m1.memory.percent(m1.memory.request)
 		default:
 			return m1.name < m2.name
 		}
@@ -288,6 +306,18 @@ func (nm *nodeMetric) getSortedPodMetrics(sortBy string) []*podMetric {
 			return m2.memory.limit.Value() < m1.memory.limit.Value()
 		case "mem.request":
 			return m2.memory.request.Value() < m1.memory.request.Value()
+		case "cpu.util.percentage":
+			return m2.cpu.percent(m2.cpu.utilization) < m1.cpu.percent(m1.cpu.utilization)
+		case "cpu.limit.percentage":
+			return m2.cpu.percent(m2.cpu.limit) < m1.cpu.percent(m1.cpu.limit)
+		case "cpu.request.percentage":
+			return m2.cpu.percent(m2.cpu.request) < m1.cpu.percent(m1.cpu.request)
+		case "mem.util.percentage":
+			return m2.memory.percent(m2.memory.utilization) < m1.memory.percent(m1.memory.utilization)
+		case "mem.limit.percentage":
+			return m2.memory.percent(m2.memory.limit) < m1.memory.percent(m1.memory.limit)
+		case "mem.request.percentage":
+			return m2.memory.percent(m2.memory.request) < m1.memory.percent(m1.memory.request)
 		default:
 			return m1.name < m2.name
 		}
@@ -417,7 +447,11 @@ func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
 // NOTE: This might not be a great place for closures due to the cyclical nature of how resourceType works. Perhaps better implemented another way.
 func (rm resourceMetric) percentFunction() (f func(r resource.Quantity) string) {
 	f = func(r resource.Quantity) string {
-		return fmt.Sprintf("%v%%", int64(float64(r.MilliValue())/float64(rm.allocatable.MilliValue())*100))
+		return fmt.Sprintf("%v%%", rm.percent(r))
 	}
 	return f
+}
+
+func (rm resourceMetric) percent(r resource.Quantity) int64 {
+	return int64(float64(r.MilliValue()) / float64(rm.allocatable.MilliValue()) * 100)
 }
