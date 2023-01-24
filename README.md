@@ -129,6 +129,7 @@ kube-capacity --pod-labels app=nginx
 kube-capacity --namespace default
 kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
+kube-capacity --exclude-node-labels kubernetes.io/os=linux
 ```
 
 ### JSON and YAML Output
