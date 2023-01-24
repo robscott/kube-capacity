@@ -143,6 +143,7 @@ kube-capacity --pods --containers --util --output yaml
   -c, --containers                includes containers in output
       --context string            context to use for Kubernetes config
   -h, --help                      help for kube-capacity
+      --kubeconfig string         kubeconfig file to use for Kubernetes config
   -n, --namespace string          only include pods from this namespace
       --namespace-labels string   labels to filter namespaces with
       --node-labels string        labels to filter nodes with
@@ -152,8 +153,10 @@ kube-capacity --pods --containers --util --output yaml
   -a, --available                 includes quantity available instead of percentage used
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
-      --sort string               attribute to sort results be (supports:
-                                    [cpu.util cpu.request cpu.limit mem.util mem.request mem.limit name])
+      --sort string               attribute to sort results by (supports:
+                                    [cpu.util cpu.request cpu.limit mem.util mem.request mem.limit cpu.util.percentage
+                                    cpu.request.percentage cpu.limit.percentage mem.util.percentage mem.request.percentage
+                                    mem.limit.percentage name])
                                     (default "name")
   -u, --util                      includes resource utilization in output
       --pod-count                 includes pod counts for each of the nodes and the whole cluster
