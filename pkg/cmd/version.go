@@ -28,6 +28,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of kube-capacity",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("kube-capacity version v0.7.3")
+		fmt.Println("kube-capacity version v0.7.4")
 	},
 }
