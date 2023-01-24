@@ -107,7 +107,7 @@ example-node-2    340m (34%)      120m (12%)    30m (3%)    380Mi (13%)        4
 example-node-1    220m (22%)      10m (1%)      10m (1%)    192Mi (6%)         360Mi (12%)     210Mi (7%)
 ```
 
-Note: Starting in v0.7.4 you can append `.percentage` to sort by percentage. For
+> **Note** Starting in v0.7.4 you can append `.percentage` to sort by percentage. For
 example, `kube-capacity --util --sort cpu.util.percentage`.
 
 ### Displaying Pod Count
