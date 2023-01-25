@@ -35,6 +35,7 @@ brews:
     # The token determines the release type (Github/Gitlab).
     owner: robscott
     name: homebrew-tap
+    token: "{{ .Env.TAP_GITHUB_TOKEN }}"
   folder: Formula
   # Brew fails from multiple 32-bit arm versions.
   # Specify which version should be used.
