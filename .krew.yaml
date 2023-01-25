@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: resource-capacity
 spec:
-  version: v{{ .TagName }}
+  version: {{ .TagName }}
   homepage: https://github.com/robscott/kube-capacity
   shortDescription: Provides an overview of resource requests, limits, and utilization
   description: |
