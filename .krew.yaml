@@ -6,6 +6,8 @@ spec:
   version: v{{ .TagName }}
   homepage: https://github.com/robscott/kube-capacity
   shortDescription: Provides an overview of resource requests, limits, and utilization
+  description: |
+    A simple CLI that provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster.
   platforms:
   - selector:
       matchLabels:
@@ -15,7 +17,7 @@ spec:
     files:
     - from: "*"
       to: "."
-    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Darwin_x86_64.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_darwin_x86_64.tar.gz" .TagName }}
   - selector:
       matchLabels:
         os: darwin
@@ -24,7 +26,7 @@ spec:
     files:
     - from: "*"
       to: "."
-    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Darwin_arm64.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_darwin_arm64.tar.gz" .TagName }}
   - selector:
       matchLabels:
         os: linux
@@ -33,7 +35,7 @@ spec:
     files:
     - from: "*"
       to: "."
-    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Linux_x86_64.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_linux_x86_64.tar.gz" .TagName }}
   - selector:
       matchLabels:
         os: linux
@@ -42,7 +44,7 @@ spec:
     files:
     - from: "*"
       to: "."
-    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Linux_arm64.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_linux_arm64.tar.gz" .TagName }}
   - selector:
       matchLabels:
         os: windows
@@ -51,6 +53,4 @@ spec:
     files:
     - from: "*"
       to: "."
-    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_Windows_x86_64.tar.gz" .TagName }}
-  description: |
-    A simple CLI that provides an overview of the resource requests, limits, and utilization in a Kubernetes cluster.
+    {{addURIAndSha "https://github.com/robscott/kube-capacity/releases/download/{{ .TagName }}/kube-capacity_{{ .TagName }}_windows_x86_64.zip" .TagName }}
