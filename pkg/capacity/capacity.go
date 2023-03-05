@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"k8s.io/client-go/kubernetes"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -29,14 +30,14 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, output, sortBy string) {
+func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFormat bool, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace, kubeContext, kubeConfig, output, sortBy string) {
 	clientset, err := kube.NewClientSet(kubeContext, kubeConfig)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)
 	}
 
-	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, namespaceLabels, namespace)
+	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace)
 	var pmList *v1beta1.PodMetricsList
 	var nmList *v1beta1.NodeMetricsList
 
@@ -59,13 +60,84 @@ func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFo
 	printList(&cm, showContainers, showPods, showUtil, showPodCount, showNamespace, output, sortBy, availableFormat)
 }
 
-func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
+func splitTaint(taint string) (string, string, string) {
+	var key, value, effect string
+	var parts []string
+
+	if strings.Contains(taint, "=") && strings.Contains(taint, ":") {
+		parts = strings.Split(taint, "=")
+		key = parts[0]
+		parts = strings.Split(parts[1], ":")
+		value = parts[0]
+		effect = parts[1]
+		return key, value, effect
+	}
+
+	if strings.Contains(taint, ":") {
+
+		parts = strings.Split(taint, ":")
+		key = parts[0]
+		effect = parts[1]
+		value = ""
+		return key, value, effect
+	}
+
+	if strings.Contains(taint, "=") {
+		parts = strings.Split(taint, "=")
+		key = parts[0]
+		value = parts[1]
+		effect = ""
+		return key, value, effect
+	}
+
+	return taint, "", ""
+}
+
+func removeNodesWithTaints(nodeList corev1.NodeList, taints string) corev1.NodeList {
+	var tempNodeList corev1.NodeList
+	var key, value, effect string
+	isTainted := false
+	taintsSlice := strings.Split(taints, ",")
+
+	for _, node := range nodeList.Items {
+		for _, taint := range taintsSlice {
+			key, value, effect = splitTaint(taint)
+			for _, t := range node.Spec.Taints {
+				if t.Key == key && t.Value == value && t.Effect == corev1.TaintEffect(effect) {
+					isTainted = true
+					break
+				}
+			}
+			if isTainted {
+				break
+			}
+		}
+		if !isTainted {
+			tempNodeList.Items = append(tempNodeList.Items, node)
+		}
+		isTainted = false
+	}
+
+	return tempNodeList
+}
+
+func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
 	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})
 	if err != nil {
 		fmt.Printf("Error listing Nodes: %v\n", err)
 		os.Exit(2)
+	}
+
+	if nodeTaints != "" {
+		taintedNodes := *nodeList
+		taintedNodes = removeNodesWithTaints(taintedNodes, nodeTaints)
+		if err != nil {
+			fmt.Printf("Error removing tained Nodes: %v\n", err)
+			os.Exit(2)
+		}
+		*nodeList = taintedNodes
 	}
 
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
