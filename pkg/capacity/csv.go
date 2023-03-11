@@ -111,9 +111,9 @@ func (cp *csvPrinter) Print(outputType string) {
 }
 
 func (cp *csvPrinter) printLine(cl *csvLine) {
-	separator := ", "
+	separator := ","
 	if cp.separator == TSVOutput {
-		separator = "\t "
+		separator = "\t"
 	}
 
 	lineItems := cp.getLineItems(cl)
