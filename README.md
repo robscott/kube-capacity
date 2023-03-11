@@ -138,6 +138,14 @@ kube-capacity --pods --output json
 kube-capacity --pods --containers --util --output yaml
 ```
 
+### CSV and TSV Output
+If you would like the data in a comma or tab separated file to make importing the data into a spreadsheet easier the output flag has optionms for those as well. Here are some sample commands:
+```
+kube-capacity --pods --output csv
+kube-capacity --pods --containers --util --output tsv
+```
+>Note: the `--available` flag is ignored with these two choices as the values can be derived within a spreadsheet
+
 ## Flags Supported
 ```
   -c, --containers                includes containers in output
@@ -148,9 +156,9 @@ kube-capacity --pods --containers --util --output yaml
       --namespace-labels string   labels to filter namespaces with
       --node-labels string        labels to filter nodes with
   -o, --output string             output format for information
-                                    (supports: [table json yaml])
+                                    (supports: [table json yaml csv tsv])
                                     (default "table")
-  -a, --available                 includes quantity available instead of percentage used
+  -a, --available                 includes quantity available instead of percentage used (ignored with csv or tsv output types) 
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
       --sort string               attribute to sort results by (supports:
