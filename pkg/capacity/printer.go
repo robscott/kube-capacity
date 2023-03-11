@@ -23,8 +23,10 @@ import (
 const (
 	//TableOutput is the constant value for output type table
 	TableOutput string = "table"
-	//TableOutput is the constant value for output type table
+	//CSVOutput is the constant value for output type csv
 	CSVOutput string = "csv"
+	//TSVOutput is the constant value for output type csv
+	TSVOutput string = "tsv"
 	//JSONOutput is the constant value for output type JSON
 	JSONOutput string = "json"
 	//YAMLOutput is the constant value for output type YAML
@@ -36,6 +38,7 @@ func SupportedOutputs() []string {
 	return []string{
 		TableOutput,
 		CSVOutput,
+		TSVOutput,
 		JSONOutput,
 		YAMLOutput,
 	}
@@ -52,7 +55,7 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			sortBy:         sortBy,
 		}
 		lp.Print(output)
-	} else if output == TableOutput || output == CSVOutput {
+	} else if output == TableOutput {
 		tp := &tablePrinter{
 			cm:              cm,
 			showPods:        showPods,
@@ -64,7 +67,19 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			w:               new(tabwriter.Writer),
 			availableFormat: availableFormat,
 		}
-		tp.Print(output)
+		tp.Print()
+	} else if output == CSVOutput || output == TSVOutput {
+		cp := &csvPrinter{
+			cm:              cm,
+			showPods:        showPods,
+			showUtil:        showUtil,
+			showPodCount:    showPodCount,
+			showContainers:  showContainers,
+			showNamespace:   showNamespace,
+			sortBy:          sortBy,
+			availableFormat: availableFormat,
+		}
+		cp.Print(output)
 	} else {
 		fmt.Printf("Called with an unsupported output type: %s", output)
 		os.Exit(1)
