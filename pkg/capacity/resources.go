@@ -421,7 +421,6 @@ func resourceString(resourceType string, actual, allocatable resource.Quantity, 
 	}
 
 	return fmt.Sprintf("%s (%d%%%%)", actualStr, int64(utilPercent))
-
 }
 
 func formatToMegiBytes(actual resource.Quantity) int64 {
@@ -457,4 +456,58 @@ func (rm resourceMetric) percentFunction() (f func(r resource.Quantity) string) 
 
 func (rm resourceMetric) percent(r resource.Quantity) int64 {
 	return int64(float64(r.MilliValue()) / float64(rm.allocatable.MilliValue()) * 100)
+}
+
+// For CSV / TSV formatting Helper Functions
+// -----------------------------------------
+
+func resourceCSVString(resourceType string, actual resource.Quantity) string {
+	if resourceType == "memory" {
+		return fmt.Sprintf("%d", formatToMegiBytes(actual))
+	}
+	return fmt.Sprintf("%d", actual.Value())
+}
+
+func resourceCSVPercentageString(actual, divisor resource.Quantity) string {
+	utilPercent := float64(0)
+	if divisor.MilliValue() > 0 {
+		utilPercent = float64(actual.MilliValue()) / float64(divisor.MilliValue()) * 100
+	}
+	return fmt.Sprintf("%d", int64(utilPercent))
+}
+
+func (rm *resourceMetric) capacityString() string {
+	return resourceCSVString(rm.resourceType, rm.allocatable)
+}
+
+func (rm *resourceMetric) requestActualString() string {
+	return resourceCSVString(rm.resourceType, rm.request)
+}
+
+func (rm *resourceMetric) requestPercentageString() string {
+	return resourceCSVPercentageString(rm.request, rm.allocatable)
+}
+
+func (rm *resourceMetric) limitActualString() string {
+	return resourceCSVString(rm.resourceType, rm.limit)
+}
+
+func (rm *resourceMetric) limitPercentageString() string {
+	return resourceCSVPercentageString(rm.limit, rm.allocatable)
+}
+
+func (rm *resourceMetric) utilActualString() string {
+	return resourceCSVString(rm.resourceType, rm.utilization)
+}
+
+func (rm *resourceMetric) utilPercentageString() string {
+	return resourceCSVPercentageString(rm.utilization, rm.allocatable)
+}
+
+func (pc *podCount) podCountCurrentString() string {
+	return fmt.Sprintf("%d", pc.current)
+}
+
+func (pc *podCount) podCountAllocatableString() string {
+	return fmt.Sprintf("%d", pc.allocatable)
 }
