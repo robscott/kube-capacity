@@ -93,10 +93,6 @@ func (cp *csvPrinter) Print(outputType string) {
 	}
 
 	for _, nm := range sortedNodeMetrics {
-		if cp.showPods || cp.showContainers {
-			cp.printLine(&csvLine{})
-		}
-
 		cp.printNodeLine(nm.name, nm)
 
 		if cp.showPods || cp.showContainers {
@@ -126,17 +122,17 @@ func (cp *csvPrinter) printLine(cl *csvLine) {
 }
 
 func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
-	lineItems := []string{cl.node}
+	lineItems := []string{"\"" + cl.node + "\""}
 
 	if cp.showContainers || cp.showPods {
 		if cp.showNamespace {
-			lineItems = append(lineItems, cl.namespace)
+			lineItems = append(lineItems, "\""+cl.namespace+"\"")
 		}
-		lineItems = append(lineItems, cl.pod)
+		lineItems = append(lineItems, "\""+cl.pod+"\"")
 	}
 
 	if cp.showContainers {
-		lineItems = append(lineItems, cl.container)
+		lineItems = append(lineItems, "\""+cl.container+"\"")
 	}
 
 	lineItems = append(lineItems, cl.cpuCapacity)
