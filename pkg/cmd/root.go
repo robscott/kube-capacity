@@ -65,7 +65,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&showPodCount,
 		"pod-count", "", false, "includes pod count per node in output")
 	rootCmd.PersistentFlags().BoolVarP(&availableFormat,
-		"available", "a", false, "includes quantity available instead of percentage used")
+		"available", "a", false, "includes quantity available instead of percentage used (ignored with csv or tsv output types)")
 	rootCmd.PersistentFlags().StringVarP(&podLabels,
 		"pod-labels", "l", "", "labels to filter pods with")
 	rootCmd.PersistentFlags().StringVarP(&nodeLabels,

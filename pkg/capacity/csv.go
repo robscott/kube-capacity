@@ -22,44 +22,61 @@ import (
 )
 
 type csvPrinter struct {
-	cm              *clusterMetric
-	showPods        bool
-	showUtil        bool
-	showPodCount    bool
-	showContainers  bool
-	showNamespace   bool
-	sortBy          string
-	file            io.Writer
-	separator       string
-	availableFormat bool
+	cm             *clusterMetric
+	showPods       bool
+	showUtil       bool
+	showPodCount   bool
+	showContainers bool
+	showNamespace  bool
+	sortBy         string
+	file           io.Writer
+	separator      string
 }
 
 type csvLine struct {
-	node           string
-	namespace      string
-	pod            string
-	container      string
-	cpuRequests    string
-	cpuLimits      string
-	cpuUtil        string
-	memoryRequests string
-	memoryLimits   string
-	memoryUtil     string
-	podCount       string
+	node                     string
+	namespace                string
+	pod                      string
+	container                string
+	cpuCapacity              string
+	cpuRequests              string
+	cpuRequestsPercentage    string
+	cpuLimits                string
+	cpuLimitsPercentage      string
+	cpuUtil                  string
+	cpuUtilPercentage        string
+	memoryCapacity           string
+	memoryRequests           string
+	memoryRequestsPercentage string
+	memoryLimits             string
+	memoryLimitsPercentage   string
+	memoryUtil               string
+	memoryUtilPercentage     string
+	podCountCurrent          string
+	podCountAllocatable      string
 }
 
 var csvHeaderStrings = csvLine{
-	node:           "NODE",
-	namespace:      "NAMESPACE",
-	pod:            "POD",
-	container:      "CONTAINER",
-	cpuRequests:    "CPU REQUESTS",
-	cpuLimits:      "CPU LIMITS",
-	cpuUtil:        "CPU UTIL",
-	memoryRequests: "MEMORY REQUESTS",
-	memoryLimits:   "MEMORY LIMITS",
-	memoryUtil:     "MEMORY UTIL",
-	podCount:       "POD COUNT",
+	node:                     "NODE",
+	namespace:                "NAMESPACE",
+	pod:                      "POD",
+	container:                "CONTAINER",
+	cpuCapacity:              "CPU CAPACITY (milli)",
+	cpuRequests:              "CPU REQUESTS",
+	cpuRequestsPercentage:    "CPU REQUESTS %%",
+	cpuLimits:                "CPU LIMITS",
+	cpuLimitsPercentage:      "CPU LIMITS %%",
+	cpuUtil:                  "CPU UTIL",
+	cpuUtilPercentage:        "CPU UTIL %%",
+	memoryCapacity:           "MEMORY CAPACITY (Mi)",
+	memoryRequests:           "MEMORY REQUESTS",
+	memoryRequestsPercentage: "MEMORY REQUESTS %%",
+	memoryLimits:             "MEMORY LIMITS",
+	memoryLimitsPercentage:   "MEMORY LIMITS %%",
+	memoryUtil:               "MEMORY UTIL",
+	memoryUtilPercentage:     "MEMORY UTIL %%",
+	podCountCurrent:          "POD COUNT CURRENT",
+	podCountAllocatable:      "POD COUNT ALLOCATABLE",
 }
 
 func (cp *csvPrinter) Print(outputType string) {
@@ -104,7 +121,7 @@ func (cp *csvPrinter) printLine(cl *csvLine) {
 	}
 
 	lineItems := cp.getLineItems(cl)
-	// need to escape or enclose strings that are not numbers only
+
 	fmt.Fprintf(cp.file, strings.Join(lineItems[:], separator)+"\n")
 }
 
@@ -122,22 +139,31 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 		lineItems = append(lineItems, cl.container)
 	}
 
+	lineItems = append(lineItems, cl.cpuCapacity)
 	lineItems = append(lineItems, cl.cpuRequests)
+	lineItems = append(lineItems, cl.cpuRequestsPercentage)
 	lineItems = append(lineItems, cl.cpuLimits)
+	lineItems = append(lineItems, cl.cpuLimitsPercentage)
 
 	if cp.showUtil {
 		lineItems = append(lineItems, cl.cpuUtil)
+		lineItems = append(lineItems, cl.cpuUtilPercentage)
 	}
 
+	lineItems = append(lineItems, cl.memoryCapacity)
 	lineItems = append(lineItems, cl.memoryRequests)
+	lineItems = append(lineItems, cl.memoryRequestsPercentage)
 	lineItems = append(lineItems, cl.memoryLimits)
+	lineItems = append(lineItems, cl.memoryLimitsPercentage)
 
 	if cp.showUtil {
 		lineItems = append(lineItems, cl.memoryUtil)
+		lineItems = append(lineItems, cl.memoryUtilPercentage)
 	}
 
 	if cp.showPodCount {
-		lineItems = append(lineItems, cl.podCount)
+		lineItems = append(lineItems, cl.podCountCurrent)
+		lineItems = append(lineItems, cl.podCountAllocatable)
 	}
 
 	return lineItems
@@ -145,62 +171,96 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 
 func (cp *csvPrinter) printClusterLine() {
 	cp.printLine(&csvLine{
-		node:           "*",
-		namespace:      "*",
-		pod:            "*",
-		container:      "*",
-		cpuRequests:    cp.cm.cpu.requestString(cp.availableFormat),
-		cpuLimits:      cp.cm.cpu.limitString(cp.availableFormat),
-		cpuUtil:        cp.cm.cpu.utilString(cp.availableFormat),
-		memoryRequests: cp.cm.memory.requestString(cp.availableFormat),
-		memoryLimits:   cp.cm.memory.limitString(cp.availableFormat),
-		memoryUtil:     cp.cm.memory.utilString(cp.availableFormat),
-		podCount:       cp.cm.podCount.podCountString(),
+		node:                     "*",
+		namespace:                "*",
+		pod:                      "*",
+		container:                "*",
+		cpuCapacity:              cp.cm.cpu.capacityString(),
+		cpuRequests:              cp.cm.cpu.requestActualString(),
+		cpuRequestsPercentage:    cp.cm.cpu.requestPercentageString(),
+		cpuLimits:                cp.cm.cpu.limitActualString(),
+		cpuLimitsPercentage:      cp.cm.cpu.limitPercentageString(),
+		cpuUtil:                  cp.cm.cpu.utilActualString(),
+		cpuUtilPercentage:        cp.cm.cpu.utilPercentageString(),
+		memoryCapacity:           cp.cm.memory.capacityString(),
+		memoryRequests:           cp.cm.memory.requestActualString(),
+		memoryRequestsPercentage: cp.cm.memory.requestPercentageString(),
+		memoryLimits:             cp.cm.memory.limitActualString(),
+		memoryLimitsPercentage:   cp.cm.memory.limitPercentageString(),
+		memoryUtil:               cp.cm.memory.utilActualString(),
+		memoryUtilPercentage:     cp.cm.memory.utilPercentageString(),
+		podCountCurrent:          cp.cm.podCount.podCountCurrentString(),
+		podCountAllocatable:      cp.cm.podCount.podCountAllocatableString(),
 	})
 }
 
 func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	cp.printLine(&csvLine{
-		node:           nodeName,
-		namespace:      "*",
-		pod:            "*",
-		container:      "*",
-		cpuRequests:    nm.cpu.requestString(cp.availableFormat),
-		cpuLimits:      nm.cpu.limitString(cp.availableFormat),
-		cpuUtil:        nm.cpu.utilString(cp.availableFormat),
-		memoryRequests: nm.memory.requestString(cp.availableFormat),
-		memoryLimits:   nm.memory.limitString(cp.availableFormat),
-		memoryUtil:     nm.memory.utilString(cp.availableFormat),
-		podCount:       nm.podCount.podCountString(),
+		node:                     nodeName,
+		namespace:                "*",
+		pod:                      "*",
+		container:                "*",
+		cpuCapacity:              nm.cpu.capacityString(),
+		cpuRequests:              nm.cpu.requestActualString(),
+		cpuRequestsPercentage:    nm.cpu.requestPercentageString(),
+		cpuLimits:                nm.cpu.limitActualString(),
+		cpuLimitsPercentage:      nm.cpu.limitPercentageString(),
+		cpuUtil:                  nm.cpu.utilActualString(),
+		cpuUtilPercentage:        nm.cpu.utilPercentageString(),
+		memoryCapacity:           nm.memory.capacityString(),
+		memoryRequests:           nm.memory.requestActualString(),
+		memoryRequestsPercentage: nm.memory.requestPercentageString(),
+		memoryLimits:             nm.memory.limitActualString(),
+		memoryLimitsPercentage:   nm.memory.limitPercentageString(),
+		memoryUtil:               nm.memory.utilActualString(),
+		memoryUtilPercentage:     nm.memory.utilPercentageString(),
+		podCountCurrent:          nm.podCount.podCountCurrentString(),
+		podCountAllocatable:      nm.podCount.podCountAllocatableString(),
 	})
 }
 
 func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
 	cp.printLine(&csvLine{
-		node:           nodeName,
-		namespace:      pm.namespace,
-		pod:            pm.name,
-		container:      "*",
-		cpuRequests:    pm.cpu.requestString(cp.availableFormat),
-		cpuLimits:      pm.cpu.limitString(cp.availableFormat),
-		cpuUtil:        pm.cpu.utilString(cp.availableFormat),
-		memoryRequests: pm.memory.requestString(cp.availableFormat),
-		memoryLimits:   pm.memory.limitString(cp.availableFormat),
-		memoryUtil:     pm.memory.utilString(cp.availableFormat),
+		node:                     nodeName,
+		namespace:                pm.namespace,
+		pod:                      pm.name,
+		container:                "*",
+		cpuCapacity:              pm.cpu.capacityString(),
+		cpuRequests:              pm.cpu.requestActualString(),
+		cpuRequestsPercentage:    pm.cpu.requestPercentageString(),
+		cpuLimits:                pm.cpu.limitActualString(),
+		cpuLimitsPercentage:      pm.cpu.limitPercentageString(),
+		cpuUtil:                  pm.cpu.utilActualString(),
+		cpuUtilPercentage:        pm.cpu.utilPercentageString(),
+		memoryCapacity:           pm.memory.capacityString(),
+		memoryRequests:           pm.memory.requestActualString(),
+		memoryRequestsPercentage: pm.memory.requestPercentageString(),
+		memoryLimits:             pm.memory.limitActualString(),
+		memoryLimitsPercentage:   pm.memory.limitPercentageString(),
+		memoryUtil:               pm.memory.utilActualString(),
+		memoryUtilPercentage:     pm.memory.utilPercentageString(),
 	})
 }
 
 func (cp *csvPrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
 	cp.printLine(&csvLine{
-		node:           nodeName,
-		namespace:      pm.namespace,
-		pod:            pm.name,
-		container:      cm.name,
-		cpuRequests:    cm.cpu.requestString(cp.availableFormat),
-		cpuLimits:      cm.cpu.limitString(cp.availableFormat),
-		cpuUtil:        cm.cpu.utilString(cp.availableFormat),
-		memoryRequests: cm.memory.requestString(cp.availableFormat),
-		memoryLimits:   cm.memory.limitString(cp.availableFormat),
-		memoryUtil:     cm.memory.utilString(cp.availableFormat),
+		node:                     nodeName,
+		namespace:                pm.namespace,
+		pod:                      pm.name,
+		container:                cm.name,
+		cpuCapacity:              cm.cpu.capacityString(),
+		cpuRequests:              cm.cpu.requestActualString(),
+		cpuRequestsPercentage:    cm.cpu.requestPercentageString(),
+		cpuLimits:                cm.cpu.limitActualString(),
+		cpuLimitsPercentage:      cm.cpu.limitPercentageString(),
+		cpuUtil:                  cm.cpu.utilActualString(),
+		cpuUtilPercentage:        cm.cpu.utilPercentageString(),
+		memoryCapacity:           cm.memory.capacityString(),
+		memoryRequests:           cm.memory.requestActualString(),
+		memoryRequestsPercentage: cm.memory.requestPercentageString(),
+		memoryLimits:             cm.memory.limitActualString(),
+		memoryLimitsPercentage:   cm.memory.limitPercentageString(),
+		memoryUtil:               cm.memory.utilActualString(),
+		memoryUtilPercentage:     cm.memory.utilPercentageString(),
 	})
 }
