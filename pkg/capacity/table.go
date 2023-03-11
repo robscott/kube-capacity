@@ -61,7 +61,7 @@ var headerStrings = tableLine{
 	podCount:       "POD COUNT",
 }
 
-func (tp *tablePrinter) Print() {
+func (tp *tablePrinter) Print(outputType string) {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
 	sortedNodeMetrics := tp.cm.getSortedNodeMetrics(tp.sortBy)
 
