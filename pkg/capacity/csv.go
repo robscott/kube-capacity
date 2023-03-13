@@ -122,17 +122,17 @@ func (cp *csvPrinter) printLine(cl *csvLine) {
 }
 
 func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
-	lineItems := []string{"\"" + cl.node + "\""}
+	lineItems := []string{CSVStringTerminator + cl.node + CSVStringTerminator}
 
 	if cp.showContainers || cp.showPods {
 		if cp.showNamespace {
-			lineItems = append(lineItems, "\""+cl.namespace+"\"")
+			lineItems = append(lineItems, CSVStringTerminator+cl.namespace+CSVStringTerminator)
 		}
-		lineItems = append(lineItems, "\""+cl.pod+"\"")
+		lineItems = append(lineItems, CSVStringTerminator+cl.pod+CSVStringTerminator)
 	}
 
 	if cp.showContainers {
-		lineItems = append(lineItems, "\""+cl.container+"\"")
+		lineItems = append(lineItems, CSVStringTerminator+cl.container+CSVStringTerminator)
 	}
 
 	lineItems = append(lineItems, cl.cpuCapacity)
@@ -167,10 +167,10 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 
 func (cp *csvPrinter) printClusterLine() {
 	cp.printLine(&csvLine{
-		node:                     "*",
-		namespace:                "*",
-		pod:                      "*",
-		container:                "*",
+		node:                     CSVVoidValue,
+		namespace:                CSVVoidValue,
+		pod:                      CSVVoidValue,
+		container:                CSVVoidValue,
 		cpuCapacity:              cp.cm.cpu.capacityString(),
 		cpuRequests:              cp.cm.cpu.requestActualString(),
 		cpuRequestsPercentage:    cp.cm.cpu.requestPercentageString(),
@@ -193,9 +193,9 @@ func (cp *csvPrinter) printClusterLine() {
 func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	cp.printLine(&csvLine{
 		node:                     nodeName,
-		namespace:                "*",
-		pod:                      "*",
-		container:                "*",
+		namespace:                CSVVoidValue,
+		pod:                      CSVVoidValue,
+		container:                CSVVoidValue,
 		cpuCapacity:              nm.cpu.capacityString(),
 		cpuRequests:              nm.cpu.requestActualString(),
 		cpuRequestsPercentage:    nm.cpu.requestPercentageString(),
@@ -220,7 +220,7 @@ func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
 		node:                     nodeName,
 		namespace:                pm.namespace,
 		pod:                      pm.name,
-		container:                "*",
+		container:                CSVVoidValue,
 		cpuCapacity:              pm.cpu.capacityString(),
 		cpuRequests:              pm.cpu.requestActualString(),
 		cpuRequestsPercentage:    pm.cpu.requestPercentageString(),
