@@ -167,10 +167,10 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 
 func (cp *csvPrinter) printClusterLine() {
 	cp.printLine(&csvLine{
-		node:                     CSVVoidValue,
-		namespace:                CSVVoidValue,
-		pod:                      CSVVoidValue,
-		container:                CSVVoidValue,
+		node:                     VoidValue,
+		namespace:                VoidValue,
+		pod:                      VoidValue,
+		container:                VoidValue,
 		cpuCapacity:              cp.cm.cpu.capacityString(),
 		cpuRequests:              cp.cm.cpu.requestActualString(),
 		cpuRequestsPercentage:    cp.cm.cpu.requestPercentageString(),
@@ -193,9 +193,9 @@ func (cp *csvPrinter) printClusterLine() {
 func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	cp.printLine(&csvLine{
 		node:                     nodeName,
-		namespace:                CSVVoidValue,
-		pod:                      CSVVoidValue,
-		container:                CSVVoidValue,
+		namespace:                VoidValue,
+		pod:                      VoidValue,
+		container:                VoidValue,
 		cpuCapacity:              nm.cpu.capacityString(),
 		cpuRequests:              nm.cpu.requestActualString(),
 		cpuRequestsPercentage:    nm.cpu.requestPercentageString(),
@@ -220,7 +220,7 @@ func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
 		node:                     nodeName,
 		namespace:                pm.namespace,
 		pod:                      pm.name,
-		container:                CSVVoidValue,
+		container:                VoidValue,
 		cpuCapacity:              pm.cpu.capacityString(),
 		cpuRequests:              pm.cpu.requestActualString(),
 		cpuRequestsPercentage:    pm.cpu.requestPercentageString(),
