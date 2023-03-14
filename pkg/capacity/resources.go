@@ -465,7 +465,7 @@ func resourceCSVString(resourceType string, actual resource.Quantity) string {
 	if resourceType == "memory" {
 		return fmt.Sprintf("%d", formatToMegiBytes(actual))
 	}
-	return fmt.Sprintf("%d", actual.Value())
+	return fmt.Sprintf("%d", actual.MilliValue())
 }
 
 func resourceCSVPercentageString(actual, divisor resource.Quantity) string {
