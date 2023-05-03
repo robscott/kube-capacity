@@ -88,18 +88,18 @@ func TestGetPodsAndNodes(t *testing.T) {
 	}, listPods(podList))
 
 	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "", "app=true", "")
-	assert.Equal(t, []string{"mynode", "mynode2", "mynode3","mynode4"}, listNodes(nodeList))
+	assert.Equal(t, []string{"mynode", "mynode2", "mynode3", "mynode4"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
 
 	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "", "", "default")
-	assert.Equal(t, []string{"mynode", "mynode2", "mynode3","mynode4"}, listNodes(nodeList))
+	assert.Equal(t, []string{"mynode", "mynode2", "mynode3", "mynode4"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
-	podList, nodeList = getPodsAndNodes(clientset, "", "", "taintkey=taintvalue:NoSchedule", "", "")
-	assert.Equal(t, []string{"mynode", "mynode2","mynode4"}, listNodes(nodeList))
+	podList, nodeList = getPodsAndNodes(clientset, "", "", "!taintkey=taintvalue:NoSchedule", "", "")
+	assert.Equal(t, []string{"mynode", "mynode2", "mynode4"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"another/mypod5",
 		"default/mypod",
@@ -110,8 +110,8 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"other/mypod2",
 		"other/mypod3",
 	}, listPods(podList))
-	podList, nodeList = getPodsAndNodes(clientset, "", "", "taintkey:NoSchedule", "", "")
-	assert.Equal(t, []string{"mynode", "mynode2","mynode3"}, listNodes(nodeList))
+	podList, nodeList = getPodsAndNodes(clientset, "", "", "!taintkey:NoSchedule", "", "")
+	assert.Equal(t, []string{"mynode", "mynode2", "mynode3"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"another/mypod5",
 		"default/mypod",
@@ -121,6 +121,11 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"kube-system/mypod1",
 		"other/mypod2",
 		"other/mypod3",
+	}, listPods(podList))
+	podList, nodeList = getPodsAndNodes(clientset, "", "", "taintkey=taintvalue:NoSchedule", "", "")
+	assert.Equal(t, []string{"mynode3"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"default/mypod7",
 	}, listPods(podList))
 }
 
