@@ -50,7 +50,7 @@ func FetchAndPrint(opts Options) {
 
 		pmList = getPodMetrics(mClientset, opts.Namespace)
 		if opts.Namespace == "" && opts.NamespaceLabels == "" {
-			nmList = getNodeMetrics(mClientset, opts.NodeLabels)
+			nmList = getNodeMetrics(mClientset, opts.NodeList, opts.NodeLabels, opts.NodeTaints)
 		}
 	}
 
@@ -93,14 +93,13 @@ func splitTaint(taint string) (string, string, string) {
 	return taint, "", ""
 }
 
-func removeNodesWithTaints(nodeList corev1.NodeList, taints string) corev1.NodeList {
+func removeNodesWithTaints(nodeList corev1.NodeList, taints []string) corev1.NodeList {
 	var tempNodeList corev1.NodeList
 	var key, value, effect string
 	isTainted := false
-	taintsSlice := strings.Split(taints, ",")
 
 	for _, node := range nodeList.Items {
-		for _, taint := range taintsSlice {
+		for _, taint := range taints {
 			key, value, effect = splitTaint(taint)
 			for _, t := range node.Spec.Taints {
 				if t.Key == key && t.Value == value && t.Effect == corev1.TaintEffect(effect) {
@@ -119,6 +118,46 @@ func removeNodesWithTaints(nodeList corev1.NodeList, taints string) corev1.NodeL
 	}
 
 	return tempNodeList
+}
+
+func addNodesWithTaints(nodeList corev1.NodeList, taints []string) corev1.NodeList {
+	var tempNodeList corev1.NodeList
+	var key, value, effect string
+	var nodeCount int
+
+	for _, node := range nodeList.Items {
+	outer:
+		for _, taint := range taints {
+			key, value, effect = splitTaint(taint)
+			for _, t := range node.Spec.Taints {
+				if t.Key == key && t.Value == value && t.Effect == corev1.TaintEffect(effect) {
+					tempNodeList.Items = append(tempNodeList.Items, node)
+					nodeCount = nodeCount + 1
+					break outer
+				}
+			}
+		}
+	}
+
+	if nodeCount == 0 {
+		fmt.Printf("Error getting nodes with taints.")
+		os.Exit(6)
+	}
+
+	return tempNodeList
+}
+
+func splitTaintsByAddRemove(taints string) (taintsToAdd []string, taintsToRemove []string) {
+	taintSlice := strings.Split(taints, ",")
+	for _, taint := range taintSlice {
+		trimmedTaint := strings.TrimSpace(taint)
+		if strings.HasPrefix(trimmedTaint, "!") {
+			taintsToRemove = append(taintsToRemove, trimmedTaint[1:])
+		} else {
+			taintsToAdd = append(taintsToAdd, trimmedTaint)
+		}
+	}
+	return taintsToAdd, taintsToRemove
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
@@ -141,7 +180,15 @@ func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLab
 
 	if nodeTaints != "" {
 		taintedNodes := *nodeList
-		taintedNodes = removeNodesWithTaints(taintedNodes, nodeTaints)
+		taintsToAdd, taintsToRemove := splitTaintsByAddRemove(nodeTaints)
+
+		if len(taintsToAdd) > 0 {
+			taintedNodes = addNodesWithTaints(taintedNodes, taintsToAdd)
+		}
+
+		if len(taintsToRemove) > 0 {
+			taintedNodes = removeNodesWithTaints(taintedNodes, taintsToRemove)
+		}
 		if err != nil {
 			fmt.Printf("Error removing tained Nodes: %v\n", err)
 			os.Exit(2)
@@ -204,6 +251,20 @@ func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLab
 	return podList, nodeList
 }
 
+func removeNodeMetricsWithTaints(nmList *v1beta1.NodeMetricsList, nodeList corev1.NodeList) v1beta1.NodeMetricsList {
+	var tempNmList v1beta1.NodeMetricsList
+
+	for _, node := range nodeList.Items {
+		for _, nm := range nmList.Items {
+			if node.Name == nm.Name {
+				tempNmList.Items = append(tempNmList.Items, nm)
+			}
+		}
+	}
+
+	return tempNmList
+}
+
 func getPodMetrics(mClientset *metrics.Clientset, namespace string) *v1beta1.PodMetricsList {
 	pmList, err := mClientset.MetricsV1beta1().PodMetricses(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -215,10 +276,21 @@ func getPodMetrics(mClientset *metrics.Clientset, namespace string) *v1beta1.Pod
 	return pmList
 }
 
-func getNodeMetrics(mClientset *metrics.Clientset, nodeLabels string) *v1beta1.NodeMetricsList {
+func getNodeMetrics(mClientset *metrics.Clientset, nodeList *corev1.NodeList, nodeLabels string, nodeTaints string) *v1beta1.NodeMetricsList {
 	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})
+
+	if nodeTaints != "" {
+		taintedNodeList := *nodeList
+		taintedNmList := removeNodeMetricsWithTaints(nmList, taintedNodeList)
+		if err != nil {
+			fmt.Printf("Error removing tainted Nodes: %v\n", err)
+			os.Exit(2)
+		}
+		*nmList = taintedNmList
+	}
+
 	if err != nil {
 		fmt.Printf("Error getting Node Metrics: %v\n", err)
 		fmt.Println("For this to work, metrics-server needs to be running in your cluster")

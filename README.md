@@ -121,14 +121,15 @@ minikube       850m (5%)      100m (0%)    231Mi (1%)        231Mi (1%)      8/1
 minikube-m02   100m (0%)      100m (0%)    53Mi (0%)         53Mi (0%)       2/110
 ```
 
-### Filtering By Labels
-For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels. The following examples show how to use these filters:
+### Filtering By Labels/Taints
+For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels/taints. The following examples show how to use these filters:
 
 ```
 kube-capacity --pod-labels app=nginx
 kube-capacity --namespace default
 kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
+kube-capacity --node-taints node.kubernetes.io/unschedulable:NoSchedule
 ```
 
 ### JSON and YAML Output
@@ -161,7 +162,8 @@ kube-capacity --pods --containers --util --output tsv
   -o, --output string             output format for information
                                     (supports: [table json yaml csv tsv])
                                     (default "table")
-  -a, --available                 includes quantity available instead of percentage used (ignored with csv or tsv output types) 
+  -a, --available                 includes quantity available instead of percentage used
+  -t, --node-taints               taints to filter nodes with
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
       --sort string               attribute to sort results by (supports:
