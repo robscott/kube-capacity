@@ -163,7 +163,7 @@ func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, node
 		os.Exit(2)
 	}
 
-	// nodeList doesn't contain taint information for the nodes, so if we want to filter based on taints, we need to pull each node individually and check it's taints.
+	// It is not possible to filter nodeList based on taints, so if we want to filter based on taints, we need to check each node individually and check it's taints.
 	if nodeTaints != "" {
 		taintedNodes := *nodeList
 		taintsToAdd, taintsToRemove := splitTaintsByAddRemove(nodeTaints)
