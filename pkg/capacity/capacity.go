@@ -29,7 +29,6 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-
 func FetchAndPrint(opts Options) {
 	clientset, err := kube.NewClientSet(opts.KubeConfig, opts.KubeContext, opts.ImpersonateUser, opts.ImpersonateGroup)
 	if err != nil {
