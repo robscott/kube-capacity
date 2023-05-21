@@ -187,6 +187,7 @@ Although this project was originally developed by [robscott](https://github.com/
 - [justinbarrick](https://github.com/justinbarrick)
 - [Padarn](https://github.com/Padarn)
 - [nickatsegment](https://github.com/nickatsegment)
+- [fnickels](https://github.com/fnickels)
 
 ## License
 Apache License 2.0
