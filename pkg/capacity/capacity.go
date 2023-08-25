@@ -29,14 +29,14 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, output, sortBy string) {
+func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, excludeTainted, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, output, sortBy string) {
 	clientset, err := kube.NewClientSet(kubeContext, kubeConfig)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)
 	}
 
-	podList, nodeList := getPodsAndNodes(clientset, podLabels, nodeLabels, namespaceLabels, namespace)
+	podList, nodeList := getPodsAndNodes(clientset, excludeTainted, podLabels, nodeLabels, namespaceLabels, namespace)
 	var pmList *v1beta1.PodMetricsList
 	var nmList *v1beta1.NodeMetricsList
 
@@ -59,13 +59,22 @@ func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, availableFo
 	printList(&cm, showContainers, showPods, showUtil, showPodCount, showNamespace, output, sortBy, availableFormat)
 }
 
-func getPodsAndNodes(clientset kubernetes.Interface, podLabels, nodeLabels, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
+func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
 	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})
 	if err != nil {
 		fmt.Printf("Error listing Nodes: %v\n", err)
 		os.Exit(2)
+	}
+	if excludeTainted {
+		filteredNodeList := []corev1.Node{}
+		for _, node := range nodeList.Items {
+			if len(node.Spec.Taints) == 0 {
+				filteredNodeList = append(filteredNodeList, node)
+			}
+		}
+		nodeList.Items = filteredNodeList
 	}
 
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{

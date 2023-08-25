@@ -25,8 +25,8 @@ import (
 
 func TestGetPodsAndNodes(t *testing.T) {
 	clientset := fake.NewSimpleClientset(
-		node("mynode", map[string]string{"hello": "world"}),
-		node("mynode2", map[string]string{"hello": "world", "moon": "lol"}),
+		node("mynode", map[string]string{"hello": "world"}, false),
+		node("mynode2", map[string]string{"hello": "world", "moon": "lol"}, true),
 		namespace("default", map[string]string{"app": "true"}),
 		namespace("kube-system", map[string]string{"system": "true"}),
 		namespace("other", map[string]string{"app": "true", "system": "true"}),
@@ -40,7 +40,7 @@ func TestGetPodsAndNodes(t *testing.T) {
 		pod("mynode", "default", "mypod6", map[string]string{"g": "test"}),
 	)
 
-	podList, nodeList := getPodsAndNodes(clientset, "", "", "", "")
+	podList, nodeList := getPodsAndNodes(clientset, false, "", "", "", "")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"another/mypod5",
@@ -52,7 +52,16 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"other/mypod3",
 	}, listPods(podList))
 
-	podList, nodeList = getPodsAndNodes(clientset, "", "hello=world", "", "")
+	podList, nodeList = getPodsAndNodes(clientset, true, "", "hello=world", "", "")
+	assert.Equal(t, []string{"mynode"}, listNodes(nodeList))
+	assert.Equal(t, []string{
+		"another/mypod5",
+		"default/mypod",
+		"default/mypod6",
+		"other/mypod2",
+	}, listPods(podList))
+
+	podList, nodeList = getPodsAndNodes(clientset, false, "", "hello=world", "", "")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"another/mypod5",
@@ -64,7 +73,7 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"other/mypod3",
 	}, listPods(podList))
 
-	podList, nodeList = getPodsAndNodes(clientset, "", "moon=lol", "", "")
+	podList, nodeList = getPodsAndNodes(clientset, false, "", "moon=lol", "", "")
 	assert.Equal(t, []string{"mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"default/mypod4",
@@ -72,27 +81,27 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"other/mypod3",
 	}, listPods(podList))
 
-	podList, nodeList = getPodsAndNodes(clientset, "a=test", "", "", "")
+	podList, nodeList = getPodsAndNodes(clientset, false, "a=test", "", "", "")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
 
-	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "app=true", "")
+	podList, nodeList = getPodsAndNodes(clientset, false, "a=test,b!=test", "", "app=true", "")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
 
-	podList, nodeList = getPodsAndNodes(clientset, "a=test,b!=test", "", "", "default")
+	podList, nodeList = getPodsAndNodes(clientset, false, "a=test,b!=test", "", "", "default")
 	assert.Equal(t, []string{"mynode", "mynode2"}, listNodes(nodeList))
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
 }
 
-func node(name string, labels map[string]string) *corev1.Node {
-	return &corev1.Node{
+func node(name string, labels map[string]string, tainted bool) *corev1.Node {
+	n := &corev1.Node{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Node",
 			APIVersion: "v1",
@@ -102,6 +111,18 @@ func node(name string, labels map[string]string) *corev1.Node {
 			Labels: labels,
 		},
 	}
+	if tainted {
+		n.Spec = corev1.NodeSpec{
+			Taints: []corev1.Taint{
+				{
+					Key:    "taint",
+					Value:  "true",
+					Effect: corev1.TaintEffectNoSchedule,
+				},
+			},
+		}
+	}
+	return n
 }
 
 func namespace(name string, labels map[string]string) *corev1.Namespace {

@@ -129,6 +129,9 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 
 	if nmList != nil {
 		for _, nm := range nmList.Items {
+			if cm.nodeMetrics[nm.Name] == nil {
+				continue
+			}
 			cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
 			cm.nodeMetrics[nm.Name].memory.utilization = nm.Usage["memory"]
 		}
