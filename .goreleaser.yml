@@ -19,10 +19,10 @@ archives:
       {{- if (eq . "6") -}}hf
       {{- else -}}v{{- . -}}
       {{- end -}}
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
     {{- end -}}
-  replacements:
-    386: i386
-    amd64: x86_64
   format_overrides:
   - goos: windows
     format: zip
