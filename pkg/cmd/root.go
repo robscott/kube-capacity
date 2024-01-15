@@ -36,6 +36,8 @@ var kubeConfig string
 var outputFormat string
 var sortBy string
 var availableFormat bool
+var impersonateUser string
+var impersonateGroup string
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -52,7 +54,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		capacity.FetchAndPrint(showContainers, showPods, showUtil, showPodCount, excludeTainted, availableFormat, podLabels,
-			nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, outputFormat, sortBy)
+			nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, impersonateUser, impersonateGroup, outputFormat, sortBy)
 	},
 }
 
@@ -84,10 +86,13 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&sortBy,
 		"sort", "", "name",
 		fmt.Sprintf("attribute to sort results by (supports: %v)", capacity.SupportedSortAttributes))
-
 	rootCmd.PersistentFlags().StringVarP(&outputFormat,
 		"output", "o", capacity.TableOutput,
 		fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
+	rootCmd.PersistentFlags().StringVarP(&impersonateUser,
+		"as", "", "", "user to impersonate kube-capacity with")
+	rootCmd.PersistentFlags().StringVarP(&impersonateGroup,
+		"as-group", "", "", "group to impersonate kube-capacity with")
 }
 
 // Execute is the primary entrypoint for this CLI

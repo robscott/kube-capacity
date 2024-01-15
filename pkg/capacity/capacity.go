@@ -29,8 +29,8 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, excludeTainted, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, output, sortBy string) {
-	clientset, err := kube.NewClientSet(kubeContext, kubeConfig)
+func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, excludeTainted, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, impersonateUser string, impersonateGroup string, output, sortBy string) {
+	clientset, err := kube.NewClientSet(kubeContext, kubeConfig, impersonateUser, impersonateGroup)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)

@@ -148,6 +148,8 @@ kube-capacity --pods --containers --util --output tsv
 
 ## Flags Supported
 ```
+      --as string                 user to impersonate command with
+      --as-group string           group to impersonate command with
   -c, --containers                includes containers in output
       --context string            context to use for Kubernetes config
   -h, --help                      help for kube-capacity
