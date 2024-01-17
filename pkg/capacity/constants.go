@@ -14,5 +14,8 @@
 
 package capacity
 
-const VoidValue = "*"
-const CSVStringTerminator = "\""
+// add constants for repetitive strings
+const (
+	VoidValue           = "*"
+	CSVStringTerminator = "\""
+)

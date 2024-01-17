@@ -139,7 +139,7 @@ kube-capacity --pods --containers --util --output yaml
 ```
 
 ### CSV and TSV Output
-If you would like the data in a comma or tab separated file to make importing the data into a spreadsheet easier the output flag has optionms for those as well. Here are some sample commands:
+If you would like the data in a comma or tab separated file to make importing the data into a spreadsheet easier the output flag has options for those as well. Here are some sample commands:
 ```
 kube-capacity --pods --output csv
 kube-capacity --pods --containers --util --output tsv
