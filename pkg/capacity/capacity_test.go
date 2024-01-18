@@ -60,7 +60,6 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"other/mypod3",
 	}, listPods(podList))
 
-
 	podList, nodeList = getPodsAndNodes(clientset, true, "", "hello=world", "", "", "")
 	assert.Equal(t, []string{"mynode"}, listNodes(nodeList))
 	assert.Equal(t, []string{
@@ -92,14 +91,12 @@ func TestGetPodsAndNodes(t *testing.T) {
 		"other/mypod3",
 	}, listPods(podList))
 
-
 	podList, nodeList = getPodsAndNodes(clientset, false, "a=test", "", "", "", "")
 	assert.Equal(t, []string{"mynode", "mynode2", "mynode3", "mynode4"}, listNodes(nodeList))
 
 	assert.Equal(t, []string{
 		"default/mypod",
 	}, listPods(podList))
-
 
 	podList, nodeList = getPodsAndNodes(clientset, false, "a=test,b!=test", "", "", "app=true", "")
 	assert.Equal(t, []string{"mynode", "mynode2", "mynode3", "mynode4"}, listNodes(nodeList))

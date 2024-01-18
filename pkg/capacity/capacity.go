@@ -372,16 +372,18 @@ func splitTaint(taint string) (string, string, string) {
 		value = parts[0]
 		effect = parts[1]
 		return key, value, effect
-	}
 
-	if strings.Contains(taint, ":") {
-
+	} else if strings.Contains(taint, ":") {
 		parts = strings.Split(taint, ":")
 		key = parts[0]
 		effect = parts[1]
 		value = ""
 		return key, value, effect
+
+	} else {
+		return "", "", ""
 	}
+
 }
 
 // This loops through the original nodeList from getPodsAndNodes and checks each node individually for the list of taints. If a node contains any taint in the list, it is removedfrom nodeList, otherwise it is remains.
