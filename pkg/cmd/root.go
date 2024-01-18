@@ -60,7 +60,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&opts.ExcludeTainted,
 		"no-taint", "", false, "exclude nodes with taints")
 	rootCmd.PersistentFlags().StringVarP(&opts.NodeTaints,
-		"node-taints", "t", "", "taints to filter nodes with")
+		"node-taints", "t", "", "comma seperated list of taints to filter nodes with, prefix taint with '!' to filter out")
 	rootCmd.PersistentFlags().StringVarP(&opts.NamespaceLabels,
 		"namespace-labels", "", "", "labels to filter namespaces with")
 	rootCmd.PersistentFlags().StringVarP(&opts.Namespace,

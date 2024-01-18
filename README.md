@@ -121,16 +121,36 @@ minikube       850m (5%)      100m (0%)    231Mi (1%)        231Mi (1%)      8/1
 minikube-m02   100m (0%)      100m (0%)    53Mi (0%)         53Mi (0%)       2/110
 ```
 
-### Filtering By Labels/Taints
-For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels/taints. The following examples show how to use these filters:
+### Filtering By Labels
+For more advanced usage, kube-capacity also supports filtering by pod, namespace, and/or node labels. The following examples show how to use these filters:
 
 ```
 kube-capacity --pod-labels app=nginx
 kube-capacity --namespace default
 kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
-kube-capacity --node-taints node.kubernetes.io/unschedulable:NoSchedule
 ```
+
+### Filtering By Taints
+Kube-capacity supports advanced filtering by taints. Users can filter in and filter out taints within the same expression. The following examples show how to use node taint filters:
+
+```
+kube-capacity --node-taints node.kubernetes.io/disk-pressure 
+```
+This will return nodes with a `node.kubernetes.io/disk-pressure` taint.
+```
+kube-capacity --node-taints !node.kubernetes.io/unschedulable:NoSchedule
+```
+This will filter out nodes with a `node.kubernetes.io/unschedulable:NoSchedule` taint.
+```
+kube-capacity --node-taints node.kubernetes.io/disk-pressure,!node.kubernetes.io/unschedulable:NoSchedule
+```
+This will return nodes with a `node.kubernetes.io/disk-pressure` taint and filter out nodes with a `!node.kubernetes.io/unschedulable:NoSchedule` taint. In other words, display the capacity on nodes that have high disk pressure but don't display the ones that can't schedule workloads.
+```
+kube-capacity --no-taint
+```
+This will filter out all nodes with taints. 
+> Note: Depending on the shell in use, users may need to escape `!` when filtering out taints. Like this: `kube-capacity --node-taints \!gpu=true:NoSchedule`
 
 ### JSON and YAML Output
 By default, kube-capacity will provide output in a table format. To view this data in JSON or YAML format, the output flag can be used. Here are some sample commands:
