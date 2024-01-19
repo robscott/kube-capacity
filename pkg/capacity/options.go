@@ -1,0 +1,18 @@
+package capacity
+
+type Option struct {
+	ShowContainers  bool
+	ShowPods        bool
+	ShowUtil        bool
+	ShowPodCount    bool
+	PodLabels       string
+	NodeLabels      string
+	ExcludeTainted  bool
+	NamespaceLabels string
+	Namespace       string
+	KubeContext     string
+	KubeConfig      string
+	OutputFormat    string
+	SortBy          string
+	AvailableFormat bool
+}
