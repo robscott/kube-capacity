@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var options capacity.Options
+var opts capacity.Options
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -33,49 +33,49 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Error parsing flags: %v", err)
 		}
 
-		if err := validateOutputType(option.OutputFormat); err != nil {
+		if err := validateOutputType(opts.OutputFormat); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(options)
+		capacity.FetchAndPrint(opts)
 	},
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&options.ShowContainers,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowContainers,
 		"containers", "c", false, "includes containers in output")
-	rootCmd.PersistentFlags().BoolVarP(&options.ShowPods,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowPods,
 		"pods", "p", false, "includes pods in output")
-	rootCmd.PersistentFlags().BoolVarP(&options.ShowUtil,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowUtil,
 		"util", "u", false, "includes resource utilization in output")
-	rootCmd.PersistentFlags().BoolVarP(&options.ShowPodCount,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowPodCount,
 		"pod-count", "", false, "includes pod count per node in output")
-	rootCmd.PersistentFlags().BoolVarP(&options.AvailableFormat,
+	rootCmd.PersistentFlags().BoolVarP(&opts.AvailableFormat,
 		"available", "a", false, "includes quantity available instead of percentage used")
-	rootCmd.PersistentFlags().StringVarP(&options.PodLabels,
+	rootCmd.PersistentFlags().StringVarP(&opts.PodLabels,
 		"pod-labels", "l", "", "labels to filter pods with")
-	rootCmd.PersistentFlags().StringVarP(&options.NodeLabels,
+	rootCmd.PersistentFlags().StringVarP(&opts.NodeLabels,
 		"node-labels", "", "", "labels to filter nodes with")
-	rootCmd.PersistentFlags().BoolVarP(&options.ExcludeTainted,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ExcludeTainted,
 		"no-taint", "", false, "exclude nodes with taints")
-	rootCmd.PersistentFlags().StringVarP(&options.NamespaceLabels,
+	rootCmd.PersistentFlags().StringVarP(&opts.NamespaceLabels,
 		"namespace-labels", "", "", "labels to filter namespaces with")
-	rootCmd.PersistentFlags().StringVarP(&options.Namespace,
+	rootCmd.PersistentFlags().StringVarP(&opts.Namespace,
 		"namespace", "n", "", "only include pods from this namespace")
-	rootCmd.PersistentFlags().StringVarP(&options.KubeContext,
+	rootCmd.PersistentFlags().StringVarP(&opts.KubeContext,
 		"context", "", "", "context to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&options.KubeConfig,
+	rootCmd.PersistentFlags().StringVarP(&opts.KubeConfig,
 		"kubeconfig", "", "", "kubeconfig file to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&option.SortBy,
+	rootCmd.PersistentFlags().StringVarP(&opts.SortBy,
 		"sort", "", "name",
 		fmt.Sprintf("attribute to sort results by (supports: %v)", capacity.SupportedSortAttributes))
-	rootCmd.PersistentFlags().StringVarP(&options.OutputFormat,
+	rootCmd.PersistentFlags().StringVarP(&opts.OutputFormat,
 		"output", "o", capacity.TableOutput,
 		fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
-	rootCmd.PersistentFlags().StringVarP(&impersonateUser,
+	rootCmd.PersistentFlags().StringVarP(&opts.ImpersonateUser,
 		"as", "", "", "user to impersonate kube-capacity with")
-	rootCmd.PersistentFlags().StringVarP(&impersonateGroup,
+	rootCmd.PersistentFlags().StringVarP(&opts.ImpersonateGroup,
 		"as-group", "", "", "group to impersonate kube-capacity with")
 }
 

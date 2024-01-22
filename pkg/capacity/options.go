@@ -1,20 +1,22 @@
 package capacity
 
-// Option is a struct containing the command line options
+// Options is a struct containing the command line options
 // FetchAndPrint depends on
 type Options struct {
-	ShowContainers  bool
-	ShowPods        bool
-	ShowUtil        bool
-	ShowPodCount    bool
-	PodLabels       string
-	NodeLabels      string
-	ExcludeTainted  bool
-	NamespaceLabels string
-	Namespace       string
-	KubeContext     string
-	KubeConfig      string
-	OutputFormat    string
-	SortBy          string
-	AvailableFormat bool
+	ShowContainers   bool
+	ShowPods         bool
+	ShowUtil         bool
+	ShowPodCount     bool
+	PodLabels        string
+	NodeLabels       string
+	ExcludeTainted   bool
+	NamespaceLabels  string
+	Namespace        string
+	KubeContext      string
+	KubeConfig       string
+	OutputFormat     string
+	SortBy           string
+	AvailableFormat  bool
+	ImpersonateUser  string
+	ImpersonateGroup string
 }

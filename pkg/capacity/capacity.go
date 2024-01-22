@@ -29,33 +29,33 @@ import (
 
 // FetchAndPrint gathers cluster resource data and outputs it
 func FetchAndPrint(opts Options) {
-	clientset, err := kube.NewClientSet(option.KubeConfig, option.KubeContext)
+	clientset, err := kube.NewClientSet(opts.KubeConfig, opts.KubeContext, opts.ImpersonateUser, opts.ImpersonateGroup)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)
 	}
 
-	podList, nodeList := getPodsAndNodes(clientset, option.ExcludeTainted, option.PodLabels, option.NodeLabels, option.NamespaceLabels, option.Namespace)
+	podList, nodeList := getPodsAndNodes(clientset, opts.ExcludeTainted, opts.PodLabels, opts.NodeLabels, opts.NamespaceLabels, opts.Namespace)
 	var pmList *v1beta1.PodMetricsList
 	var nmList *v1beta1.NodeMetricsList
 
-	if option.ShowUtil {
-		mClientset, err := kube.NewMetricsClientSet(option.KubeContext, option.KubeConfig)
+	if opts.ShowUtil {
+		mClientset, err := kube.NewMetricsClientSet(opts.KubeContext, opts.KubeConfig)
 		if err != nil {
 			fmt.Printf("Error connecting to Metrics API: %v\n", err)
 			os.Exit(4)
 		}
 
-		pmList = getPodMetrics(mClientset, option.Namespace)
-		if option.Namespace == "" && option.NamespaceLabels == "" {
-			nmList = getNodeMetrics(mClientset, option.NodeLabels)
+		pmList = getPodMetrics(mClientset, opts.Namespace)
+		if opts.Namespace == "" && opts.NamespaceLabels == "" {
+			nmList = getNodeMetrics(mClientset, opts.NodeLabels)
 		}
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
-	showNamespace := option.Namespace == ""
+	showNamespace := opts.Namespace == ""
 
-	printList(&cm, option.ShowContainers, option.ShowPods, option.ShowUtil, option.ShowPodCount, showNamespace, option.OutputFormat, option.SortBy, option.AvailableFormat)
+	printList(&cm, opts.ShowContainers, opts.ShowPods, opts.ShowUtil, opts.ShowPodCount, showNamespace, opts.OutputFormat, opts.SortBy, opts.AvailableFormat)
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
