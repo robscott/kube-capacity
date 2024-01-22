@@ -23,8 +23,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-//func getPodsAndNodes(1 clientset , 2 podLabels, 3 nodeLabels, 4 nodeTaints, 5 namespaceLabels, 6 namespace string)
-
 func TestGetPodsAndNodes(t *testing.T) {
 	clientset := fake.NewSimpleClientset(
 		node("mynode", map[string]string{"hello": "world"}, false),

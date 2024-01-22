@@ -131,7 +131,7 @@ kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
 ```
 
-### Filtering By Taints
+### Filtering By Node Taints
 Kube-capacity supports advanced filtering by taints. Users can filter in and filter out taints within the same expression. The following examples show how to use node taint filters:
 
 ```
@@ -182,7 +182,7 @@ kube-capacity --pods --containers --util --output tsv
   -o, --output string             output format for information
                                     (supports: [table json yaml csv tsv])
                                     (default "table")
-  -a, --available                 includes quantity available instead of percentage used
+  -a, --available                 includes quantity available instead of percentage used (ignored with csv or tsv output types)
   -t, --node-taints               taints to filter nodes with
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
