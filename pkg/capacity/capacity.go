@@ -28,7 +28,7 @@ import (
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(option Option) {
+func FetchAndPrint(opts Options) {
 	clientset, err := kube.NewClientSet(option.KubeConfig, option.KubeContext)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
