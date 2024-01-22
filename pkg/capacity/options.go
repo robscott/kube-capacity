@@ -2,7 +2,7 @@ package capacity
 
 // Option is a struct containing the command line options
 // FetchAndPrint depends on
-type Option struct {
+type Options struct {
 	ShowContainers  bool
 	ShowPods        bool
 	ShowUtil        bool
