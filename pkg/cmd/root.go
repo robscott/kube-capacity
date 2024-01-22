@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var option capacity.Option
+var options capacity.Options
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -38,42 +38,45 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(option)
+		capacity.FetchAndPrint(options)
 	},
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&option.ShowContainers,
+	rootCmd.PersistentFlags().BoolVarP(&options.ShowContainers,
 		"containers", "c", false, "includes containers in output")
-	rootCmd.PersistentFlags().BoolVarP(&option.ShowPods,
+	rootCmd.PersistentFlags().BoolVarP(&options.ShowPods,
 		"pods", "p", false, "includes pods in output")
-	rootCmd.PersistentFlags().BoolVarP(&option.ShowUtil,
+	rootCmd.PersistentFlags().BoolVarP(&options.ShowUtil,
 		"util", "u", false, "includes resource utilization in output")
-	rootCmd.PersistentFlags().BoolVarP(&option.ShowPodCount,
+	rootCmd.PersistentFlags().BoolVarP(&options.ShowPodCount,
 		"pod-count", "", false, "includes pod count per node in output")
-	rootCmd.PersistentFlags().BoolVarP(&option.AvailableFormat,
+	rootCmd.PersistentFlags().BoolVarP(&options.AvailableFormat,
 		"available", "a", false, "includes quantity available instead of percentage used")
-	rootCmd.PersistentFlags().StringVarP(&option.PodLabels,
+	rootCmd.PersistentFlags().StringVarP(&options.PodLabels,
 		"pod-labels", "l", "", "labels to filter pods with")
-	rootCmd.PersistentFlags().StringVarP(&option.NodeLabels,
+	rootCmd.PersistentFlags().StringVarP(&options.NodeLabels,
 		"node-labels", "", "", "labels to filter nodes with")
-	rootCmd.PersistentFlags().BoolVarP(&option.ExcludeTainted,
+	rootCmd.PersistentFlags().BoolVarP(&options.ExcludeTainted,
 		"no-taint", "", false, "exclude nodes with taints")
-	rootCmd.PersistentFlags().StringVarP(&option.NamespaceLabels,
+	rootCmd.PersistentFlags().StringVarP(&options.NamespaceLabels,
 		"namespace-labels", "", "", "labels to filter namespaces with")
-	rootCmd.PersistentFlags().StringVarP(&option.Namespace,
+	rootCmd.PersistentFlags().StringVarP(&options.Namespace,
 		"namespace", "n", "", "only include pods from this namespace")
-	rootCmd.PersistentFlags().StringVarP(&option.KubeContext,
+	rootCmd.PersistentFlags().StringVarP(&options.KubeContext,
 		"context", "", "", "context to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&option.KubeConfig,
+	rootCmd.PersistentFlags().StringVarP(&options.KubeConfig,
 		"kubeconfig", "", "", "kubeconfig file to use for Kubernetes config")
 	rootCmd.PersistentFlags().StringVarP(&option.SortBy,
 		"sort", "", "name",
 		fmt.Sprintf("attribute to sort results by (supports: %v)", capacity.SupportedSortAttributes))
-
-	rootCmd.PersistentFlags().StringVarP(&option.OutputFormat,
+	rootCmd.PersistentFlags().StringVarP(&options.OutputFormat,
 		"output", "o", capacity.TableOutput,
 		fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
+	rootCmd.PersistentFlags().StringVarP(&impersonateUser,
+		"as", "", "", "user to impersonate kube-capacity with")
+	rootCmd.PersistentFlags().StringVarP(&impersonateGroup,
+		"as-group", "", "", "group to impersonate kube-capacity with")
 }
 
 // Execute is the primary entrypoint for this CLI

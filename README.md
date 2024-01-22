@@ -138,8 +138,18 @@ kube-capacity --pods --output json
 kube-capacity --pods --containers --util --output yaml
 ```
 
+### CSV and TSV Output
+If you would like the data in a comma or tab separated file to make importing the data into a spreadsheet easier the output flag has options for those as well. Here are some sample commands:
+```
+kube-capacity --pods --output csv
+kube-capacity --pods --containers --util --output tsv
+```
+>Note: the `--available` flag is ignored with these two choices as the values can be derived within a spreadsheet
+
 ## Flags Supported
 ```
+      --as string                 user to impersonate command with
+      --as-group string           group to impersonate command with
   -c, --containers                includes containers in output
       --context string            context to use for Kubernetes config
   -h, --help                      help for kube-capacity
@@ -149,9 +159,9 @@ kube-capacity --pods --containers --util --output yaml
       --no-taint                  exclude nodes with taints
       --node-labels string        labels to filter nodes with
   -o, --output string             output format for information
-                                    (supports: [table json yaml])
+                                    (supports: [table json yaml csv tsv])
                                     (default "table")
-  -a, --available                 includes quantity available instead of percentage used
+  -a, --available                 includes quantity available instead of percentage used (ignored with csv or tsv output types) 
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
       --sort string               attribute to sort results by (supports:
@@ -180,6 +190,7 @@ Although this project was originally developed by [robscott](https://github.com/
 - [justinbarrick](https://github.com/justinbarrick)
 - [Padarn](https://github.com/Padarn)
 - [nickatsegment](https://github.com/nickatsegment)
+- [fnickels](https://github.com/fnickels)
 
 ## License
 Apache License 2.0

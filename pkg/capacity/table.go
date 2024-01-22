@@ -140,10 +140,10 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 
 func (tp *tablePrinter) printClusterLine() {
 	tp.printLine(&tableLine{
-		node:           "*",
-		namespace:      "*",
-		pod:            "*",
-		container:      "*",
+		node:           VoidValue,
+		namespace:      VoidValue,
+		pod:            VoidValue,
+		container:      VoidValue,
 		cpuRequests:    tp.cm.cpu.requestString(tp.availableFormat),
 		cpuLimits:      tp.cm.cpu.limitString(tp.availableFormat),
 		cpuUtil:        tp.cm.cpu.utilString(tp.availableFormat),
@@ -157,9 +157,9 @@ func (tp *tablePrinter) printClusterLine() {
 func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	tp.printLine(&tableLine{
 		node:           nodeName,
-		namespace:      "*",
-		pod:            "*",
-		container:      "*",
+		namespace:      VoidValue,
+		pod:            VoidValue,
+		container:      VoidValue,
 		cpuRequests:    nm.cpu.requestString(tp.availableFormat),
 		cpuLimits:      nm.cpu.limitString(tp.availableFormat),
 		cpuUtil:        nm.cpu.utilString(tp.availableFormat),
@@ -175,7 +175,7 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 		node:           nodeName,
 		namespace:      pm.namespace,
 		pod:            pm.name,
-		container:      "*",
+		container:      VoidValue,
 		cpuRequests:    pm.cpu.requestString(tp.availableFormat),
 		cpuLimits:      pm.cpu.limitString(tp.availableFormat),
 		cpuUtil:        pm.cpu.utilString(tp.availableFormat),
