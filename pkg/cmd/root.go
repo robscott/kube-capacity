@@ -22,22 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var showContainers bool
-var showPods bool
-var showUtil bool
-var showPodCount bool
-var podLabels string
-var nodeLabels string
-var excludeTainted bool
-var namespaceLabels string
-var namespace string
-var kubeContext string
-var kubeConfig string
-var outputFormat string
-var sortBy string
-var availableFormat bool
-var impersonateUser string
-var impersonateGroup string
+var opts capacity.Options
 
 var rootCmd = &cobra.Command{
 	Use:   "kube-capacity",
@@ -48,50 +33,49 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("Error parsing flags: %v", err)
 		}
 
-		if err := validateOutputType(outputFormat); err != nil {
+		if err := validateOutputType(opts.OutputFormat); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		capacity.FetchAndPrint(showContainers, showPods, showUtil, showPodCount, excludeTainted, availableFormat, podLabels,
-			nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, impersonateUser, impersonateGroup, outputFormat, sortBy)
+		capacity.FetchAndPrint(opts)
 	},
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&showContainers,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowContainers,
 		"containers", "c", false, "includes containers in output")
-	rootCmd.PersistentFlags().BoolVarP(&showPods,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowPods,
 		"pods", "p", false, "includes pods in output")
-	rootCmd.PersistentFlags().BoolVarP(&showUtil,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowUtil,
 		"util", "u", false, "includes resource utilization in output")
-	rootCmd.PersistentFlags().BoolVarP(&showPodCount,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowPodCount,
 		"pod-count", "", false, "includes pod count per node in output")
-	rootCmd.PersistentFlags().BoolVarP(&availableFormat,
-		"available", "a", false, "includes quantity available instead of percentage used (ignored with csv or tsv output types)")
-	rootCmd.PersistentFlags().StringVarP(&podLabels,
+	rootCmd.PersistentFlags().BoolVarP(&opts.AvailableFormat,
+		"available", "a", false, "includes quantity available instead of percentage used")
+	rootCmd.PersistentFlags().StringVarP(&opts.PodLabels,
 		"pod-labels", "l", "", "labels to filter pods with")
-	rootCmd.PersistentFlags().StringVarP(&nodeLabels,
+	rootCmd.PersistentFlags().StringVarP(&opts.NodeLabels,
 		"node-labels", "", "", "labels to filter nodes with")
-	rootCmd.PersistentFlags().BoolVarP(&excludeTainted,
+	rootCmd.PersistentFlags().BoolVarP(&opts.ExcludeTainted,
 		"no-taint", "", false, "exclude nodes with taints")
-	rootCmd.PersistentFlags().StringVarP(&namespaceLabels,
+	rootCmd.PersistentFlags().StringVarP(&opts.NamespaceLabels,
 		"namespace-labels", "", "", "labels to filter namespaces with")
-	rootCmd.PersistentFlags().StringVarP(&namespace,
+	rootCmd.PersistentFlags().StringVarP(&opts.Namespace,
 		"namespace", "n", "", "only include pods from this namespace")
-	rootCmd.PersistentFlags().StringVarP(&kubeContext,
+	rootCmd.PersistentFlags().StringVarP(&opts.KubeContext,
 		"context", "", "", "context to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&kubeConfig,
+	rootCmd.PersistentFlags().StringVarP(&opts.KubeConfig,
 		"kubeconfig", "", "", "kubeconfig file to use for Kubernetes config")
-	rootCmd.PersistentFlags().StringVarP(&sortBy,
+	rootCmd.PersistentFlags().StringVarP(&opts.SortBy,
 		"sort", "", "name",
 		fmt.Sprintf("attribute to sort results by (supports: %v)", capacity.SupportedSortAttributes))
-	rootCmd.PersistentFlags().StringVarP(&outputFormat,
+	rootCmd.PersistentFlags().StringVarP(&opts.OutputFormat,
 		"output", "o", capacity.TableOutput,
 		fmt.Sprintf("output format for information (supports: %v)", capacity.SupportedOutputs()))
-	rootCmd.PersistentFlags().StringVarP(&impersonateUser,
+	rootCmd.PersistentFlags().StringVarP(&opts.ImpersonateUser,
 		"as", "", "", "user to impersonate kube-capacity with")
-	rootCmd.PersistentFlags().StringVarP(&impersonateGroup,
+	rootCmd.PersistentFlags().StringVarP(&opts.ImpersonateGroup,
 		"as-group", "", "", "group to impersonate kube-capacity with")
 }
 

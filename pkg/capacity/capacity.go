@@ -19,44 +19,43 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/client-go/kubernetes"
-	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
-
 	"github.com/robscott/kube-capacity/pkg/kube"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 // FetchAndPrint gathers cluster resource data and outputs it
-func FetchAndPrint(showContainers, showPods, showUtil, showPodCount, excludeTainted, availableFormat bool, podLabels, nodeLabels, namespaceLabels, namespace, kubeContext, kubeConfig, impersonateUser string, impersonateGroup string, output, sortBy string) {
-	clientset, err := kube.NewClientSet(kubeContext, kubeConfig, impersonateUser, impersonateGroup)
+func FetchAndPrint(opts Options) {
+	clientset, err := kube.NewClientSet(opts.KubeConfig, opts.KubeContext, opts.ImpersonateUser, opts.ImpersonateGroup)
 	if err != nil {
 		fmt.Printf("Error connecting to Kubernetes: %v\n", err)
 		os.Exit(1)
 	}
 
-	podList, nodeList := getPodsAndNodes(clientset, excludeTainted, podLabels, nodeLabels, namespaceLabels, namespace)
+	podList, nodeList := getPodsAndNodes(clientset, opts.ExcludeTainted, opts.PodLabels, opts.NodeLabels, opts.NamespaceLabels, opts.Namespace)
 	var pmList *v1beta1.PodMetricsList
 	var nmList *v1beta1.NodeMetricsList
 
-	if showUtil {
-		mClientset, err := kube.NewMetricsClientSet(kubeContext, kubeConfig)
+	if opts.ShowUtil {
+		mClientset, err := kube.NewMetricsClientSet(opts.KubeContext, opts.KubeConfig)
 		if err != nil {
 			fmt.Printf("Error connecting to Metrics API: %v\n", err)
 			os.Exit(4)
 		}
 
-		pmList = getPodMetrics(mClientset, namespace)
-		if namespace == "" && namespaceLabels == "" {
-			nmList = getNodeMetrics(mClientset, nodeLabels)
+		pmList = getPodMetrics(mClientset, opts.Namespace)
+		if opts.Namespace == "" && opts.NamespaceLabels == "" {
+			nmList = getNodeMetrics(mClientset, opts.NodeLabels)
 		}
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
-	showNamespace := namespace == ""
+	showNamespace := opts.Namespace == ""
 
-	printList(&cm, showContainers, showPods, showUtil, showPodCount, showNamespace, output, sortBy, availableFormat)
+	printList(&cm, opts.ShowContainers, opts.ShowPods, opts.ShowUtil, opts.ShowPodCount, showNamespace, opts.OutputFormat, opts.SortBy, opts.AvailableFormat)
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
