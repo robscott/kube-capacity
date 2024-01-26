@@ -260,20 +260,6 @@ func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLab
 	return podList, nodeList
 }
 
-func removeNodeMetricsWithTaints(nmList *v1beta1.NodeMetricsList, nodeList corev1.NodeList) v1beta1.NodeMetricsList {
-	var tempNmList v1beta1.NodeMetricsList
-
-	for _, node := range nodeList.Items {
-		for _, nm := range nmList.Items {
-			if node.Name == nm.Name {
-				tempNmList.Items = append(tempNmList.Items, nm)
-			}
-		}
-	}
-
-	return tempNmList
-}
-
 func getPodMetrics(mClientset *metrics.Clientset, namespace string) *v1beta1.PodMetricsList {
 	pmList, err := mClientset.MetricsV1beta1().PodMetricses(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -289,16 +275,6 @@ func getNodeMetrics(mClientset *metrics.Clientset, nodeList *corev1.NodeList, no
 	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})
-
-	if nodeTaints != "" {
-		taintedNodeList := *nodeList
-		taintedNmList := removeNodeMetricsWithTaints(nmList, taintedNodeList)
-		if err != nil {
-			fmt.Printf("Error removing tainted Nodes: %v\n", err)
-			os.Exit(2)
-		}
-		*nmList = taintedNmList
-	}
 
 	if err != nil {
 		fmt.Printf("Error getting Node Metrics: %v\n", err)
