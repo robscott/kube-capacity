@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	k8taints "k8s.io/kubernetes/pkg/util/taints"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -49,7 +50,7 @@ func FetchAndPrint(opts Options) {
 
 		pmList = getPodMetrics(mClientset, opts.Namespace)
 		if opts.Namespace == "" && opts.NamespaceLabels == "" {
-			nmList = getNodeMetrics(mClientset, nodeList, opts.NodeLabels, opts.NodeTaints)
+			nmList = getNodeMetrics(mClientset, nodeList, opts.NodeLabels)
 		}
 	}
 
@@ -57,116 +58,6 @@ func FetchAndPrint(opts Options) {
 	showNamespace := opts.Namespace == ""
 
 	printList(&cm, opts.ShowContainers, opts.ShowPods, opts.ShowUtil, opts.ShowPodCount, showNamespace, opts.OutputFormat, opts.SortBy, opts.AvailableFormat)
-}
-
-// splitTaint handles two possible taint formats, key1:effect and key1=value1:effect.
-// Returns key, value, and effect as strings.
-func splitTaint(taint string) (string, string, string) {
-	var key, value, effect string
-	var parts []string
-
-	if strings.Contains(taint, "=") && strings.Contains(taint, ":") {
-		parts = strings.Split(taint, "=")
-		key = parts[0]
-		parts = strings.Split(parts[1], ":")
-		value = parts[0]
-		effect = parts[1]
-		return key, value, effect
-	}
-
-	if strings.Contains(taint, ":") {
-
-		parts = strings.Split(taint, ":")
-		key = parts[0]
-		effect = parts[1]
-		value = ""
-		return key, value, effect
-	}
-
-	if strings.Contains(taint, "=") {
-		parts = strings.Split(taint, "=")
-		key = parts[0]
-		value = parts[1]
-		effect = ""
-		return key, value, effect
-	}
-
-	return taint, "", ""
-}
-
-// removeNodesWithTaints loops through the original nodeList from getPodsAndNodes
-// and checks each node individually for the list of taints. If a node contains
-// any taint in the list, it is removed from nodeList
-func removeNodesWithTaints(nodeList corev1.NodeList, taints []string) corev1.NodeList {
-	var tempNodeList corev1.NodeList
-	var key, value, effect string
-	isTainted := false
-
-	for _, node := range nodeList.Items {
-		for _, taint := range taints {
-			key, value, effect = splitTaint(taint)
-			for _, t := range node.Spec.Taints {
-				if t.Key == key && t.Value == value && t.Effect == corev1.TaintEffect(effect) {
-					isTainted = true
-					break
-				}
-			}
-			if isTainted {
-				break
-			}
-		}
-		if !isTainted {
-			tempNodeList.Items = append(tempNodeList.Items, node)
-		}
-		isTainted = false
-	}
-
-	return tempNodeList
-}
-
-// addNodesWithTaints loops through the original nodeList from getPodsAndNodes and
-// checks each node individually for the list of taints. If a node contains any
-// taint in the list, it remains as part of nodeList, otherwise it is removed.
-func addNodesWithTaints(nodeList corev1.NodeList, taints []string) corev1.NodeList {
-	var tempNodeList corev1.NodeList
-	var key, value, effect string
-	var nodeCount int
-
-	for _, node := range nodeList.Items {
-	outer:
-		for _, taint := range taints {
-			key, value, effect = splitTaint(taint)
-			for _, t := range node.Spec.Taints {
-				if t.Key == key && t.Value == value && t.Effect == corev1.TaintEffect(effect) {
-					tempNodeList.Items = append(tempNodeList.Items, node)
-					nodeCount = nodeCount + 1
-					break outer
-				}
-			}
-		}
-	}
-
-	if nodeCount == 0 {
-		fmt.Printf("Error getting nodes with taints.")
-		os.Exit(6)
-	}
-
-	return tempNodeList
-}
-
-// splitTaintsByAddRemove parses a string of taints and organizes them
-// into lists of taints that should be filtered in and filtered out
-func splitTaintsByAddRemove(taints string) (taintsToAdd []string, taintsToRemove []string) {
-	taintSlice := strings.Split(taints, ",")
-	for _, taint := range taintSlice {
-		trimmedTaint := strings.TrimSpace(taint)
-		if strings.HasPrefix(trimmedTaint, "!") {
-			taintsToRemove = append(taintsToRemove, trimmedTaint[1:])
-		} else {
-			taintsToAdd = append(taintsToAdd, trimmedTaint)
-		}
-	}
-	return taintsToAdd, taintsToRemove
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
@@ -188,21 +79,63 @@ func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLab
 	}
 
 	if nodeTaints != "" {
-		taintedNodes := *nodeList
-		taintsToAdd, taintsToRemove := splitTaintsByAddRemove(nodeTaints)
-
-		if len(taintsToAdd) > 0 {
-			taintedNodes = addNodesWithTaints(taintedNodes, taintsToAdd)
+		taints := strings.Split(nodeTaints, ",")
+		taintsToAdd, taintsToRemove, error := k8taints.ParseTaints(taints)
+		if error != nil {
+			fmt.Printf("Error parsing taint parameter: %v\n", error)
+			os.Exit(3)
 		}
 
-		if len(taintsToRemove) > 0 {
-			taintedNodes = removeNodesWithTaints(taintedNodes, taintsToRemove)
+		var tempAddNodeList corev1.NodeList
+		var tempRemoveNodeList corev1.NodeList
+		for _, node := range nodeList.Items {
+			for _, nodeTaint := range node.Spec.Taints {
+				for _, paramTaint := range taintsToAdd {
+					if nodeTaint.Key == paramTaint.Key && nodeTaint.Effect == paramTaint.Effect {
+						tempAddNodeList.Items = append(tempAddNodeList.Items, node)
+					}
+				}
+				for _, paramTaint := range taintsToRemove {
+					if nodeTaint.Key == paramTaint.Key && nodeTaint.Effect == paramTaint.Effect {
+						tempRemoveNodeList.Items = append(tempRemoveNodeList.Items, node)
+					}
+				}
+			}
 		}
-		if err != nil {
-			fmt.Printf("Error removing tained Nodes: %v\n", err)
-			os.Exit(2)
+
+		isTainted := false
+		var tempFinalNodeList corev1.NodeList
+		if len(tempRemoveNodeList.Items) == 0 {
+			*nodeList = tempAddNodeList
+		} else if len(tempAddNodeList.Items) == 0 {
+			for _, node := range nodeList.Items {
+				for _, removedNode := range tempRemoveNodeList.Items {
+					if node.ObjectMeta.Name == removedNode.ObjectMeta.Name {
+						isTainted = true
+						break
+					}
+				}
+				if !isTainted {
+					tempFinalNodeList.Items = append(tempFinalNodeList.Items, node)
+				}
+				isTainted = false
+			}
+			*nodeList = tempFinalNodeList
+		} else {
+			for _, node := range tempAddNodeList.Items {
+				for _, removedNode := range tempRemoveNodeList.Items {
+					if node.ObjectMeta.Name == removedNode.ObjectMeta.Name {
+						isTainted = true
+						break
+					}
+				}
+				if !isTainted {
+					tempFinalNodeList.Items = append(tempFinalNodeList.Items, node)
+				}
+				isTainted = false
+			}
+			*nodeList = tempFinalNodeList
 		}
-		*nodeList = taintedNodes
 	}
 
 	podList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
@@ -271,7 +204,7 @@ func getPodMetrics(mClientset *metrics.Clientset, namespace string) *v1beta1.Pod
 	return pmList
 }
 
-func getNodeMetrics(mClientset *metrics.Clientset, nodeList *corev1.NodeList, nodeLabels string, nodeTaints string) *v1beta1.NodeMetricsList {
+func getNodeMetrics(mClientset *metrics.Clientset, nodeList *corev1.NodeList, nodeLabels string) *v1beta1.NodeMetricsList {
 	nmList, err := mClientset.MetricsV1beta1().NodeMetricses().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: nodeLabels,
 	})

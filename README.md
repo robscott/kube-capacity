@@ -139,18 +139,17 @@ kube-capacity --node-taints node.kubernetes.io/disk-pressure
 ```
 This will return nodes with a `node.kubernetes.io/disk-pressure` taint.
 ```
-kube-capacity --node-taints !node.kubernetes.io/unschedulable:NoSchedule
+kube-capacity --node-taints node.kubernetes.io/unschedulable:NoSchedule-
 ```
 This will filter out nodes with a `node.kubernetes.io/unschedulable:NoSchedule` taint.
 ```
-kube-capacity --node-taints node.kubernetes.io/disk-pressure,!node.kubernetes.io/unschedulable:NoSchedule
+kube-capacity --node-taints node.kubernetes.io/disk-pressure,node.kubernetes.io/unschedulable:NoSchedule-
 ```
-This will return nodes with a `node.kubernetes.io/disk-pressure` taint and filter out nodes with a `!node.kubernetes.io/unschedulable:NoSchedule` taint. In other words, display the capacity on nodes that have high disk pressure but don't display the ones that can't schedule workloads.
+This will return nodes with a `node.kubernetes.io/disk-pressure` taint and filter out nodes with a `node.kubernetes.io/unschedulable:NoSchedule` taint. In other words, display the capacity on nodes that have high disk pressure but don't display the ones that can't schedule workloads.
 ```
 kube-capacity --no-taint
 ```
 This will filter out all nodes with taints. 
-> Note: Depending on the shell in use, users may need to escape `!` when filtering out taints. Like this: `kube-capacity --node-taints \!gpu=true:NoSchedule`
 
 ### JSON and YAML Output
 By default, kube-capacity will provide output in a table format. To view this data in JSON or YAML format, the output flag can be used. Here are some sample commands:
