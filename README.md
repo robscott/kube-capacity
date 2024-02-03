@@ -135,17 +135,19 @@ kube-capacity --node-labels kubernetes.io/role=node
 Kube-capacity supports advanced filtering by taints. Users can filter in and filter out taints within the same expression. The following examples show how to use node taint filters:
 
 ```
-kube-capacity --node-taints node.kubernetes.io/disk-pressure 
+kube-capacity --node-taints special=true:NoSchedule 
+kube-capacity --node-taints special:NoSchedule 
 ```
-This will return nodes with a `node.kubernetes.io/disk-pressure` taint.
+These will return only special nodes.
 ```
-kube-capacity --node-taints node.kubernetes.io/unschedulable:NoSchedule-
+kube-capacity --node-taints special=true:NoSchedule-
+kube-capacity --node-taints special:NoSchedule-
 ```
-This will filter out nodes with a `node.kubernetes.io/unschedulable:NoSchedule` taint.
+These will filter out special nodes and return only unspecial nodes.
 ```
-kube-capacity --node-taints node.kubernetes.io/disk-pressure,node.kubernetes.io/unschedulable:NoSchedule-
+kube-capacity --node-taints special=true:NoSchedule,old-hardware:NoSchedule-
 ```
-This will return nodes with a `node.kubernetes.io/disk-pressure` taint and filter out nodes with a `node.kubernetes.io/unschedulable:NoSchedule` taint. In other words, display the capacity on nodes that have high disk pressure but don't display the ones that can't schedule workloads.
+This will return special nodes that are not tainted with `old-hardware:NoSchedule`. In other words, display the special nodes but don't display the ones that are running on old hardware.
 ```
 kube-capacity --no-taint
 ```
@@ -212,6 +214,7 @@ Although this project was originally developed by [robscott](https://github.com/
 - [Padarn](https://github.com/Padarn)
 - [nickatsegment](https://github.com/nickatsegment)
 - [fnickels](https://github.com/fnickels)
+- [isaacnboyd](https://github.com/isaacnboyd)
 
 ## License
 Apache License 2.0
