@@ -131,6 +131,28 @@ kube-capacity --namespace-labels team=api
 kube-capacity --node-labels kubernetes.io/role=node
 ```
 
+### Filtering By Node Taints
+Kube-capacity supports advanced filtering by taints. Users can filter in and filter out taints within the same expression. The following examples show how to use node taint filters:
+
+```
+kube-capacity --node-taints special=true:NoSchedule 
+kube-capacity --node-taints special:NoSchedule 
+```
+These will return only special nodes.
+```
+kube-capacity --node-taints special=true:NoSchedule-
+kube-capacity --node-taints special:NoSchedule-
+```
+These will filter out special nodes and return only unspecial nodes.
+```
+kube-capacity --node-taints special=true:NoSchedule,old-hardware:NoSchedule-
+```
+This will return special nodes that are not tainted with `old-hardware:NoSchedule`. In other words, display the special nodes but don't display the ones that are running on old hardware.
+```
+kube-capacity --no-taint
+```
+This will filter out all nodes with taints. 
+
 ### JSON and YAML Output
 By default, kube-capacity will provide output in a table format. To view this data in JSON or YAML format, the output flag can be used. Here are some sample commands:
 ```
@@ -161,7 +183,8 @@ kube-capacity --pods --containers --util --output tsv
   -o, --output string             output format for information
                                     (supports: [table json yaml csv tsv])
                                     (default "table")
-  -a, --available                 includes quantity available instead of percentage used (ignored with csv or tsv output types) 
+  -a, --available                 includes quantity available instead of percentage used (ignored with csv or tsv output types)
+  -t, --node-taints               taints to filter nodes with
   -l, --pod-labels string         labels to filter pods with
   -p, --pods                      includes pods in output
       --sort string               attribute to sort results by (supports:
@@ -191,6 +214,7 @@ Although this project was originally developed by [robscott](https://github.com/
 - [Padarn](https://github.com/Padarn)
 - [nickatsegment](https://github.com/nickatsegment)
 - [fnickels](https://github.com/fnickels)
+- [isaacnboyd](https://github.com/isaacnboyd)
 
 ## License
 Apache License 2.0
