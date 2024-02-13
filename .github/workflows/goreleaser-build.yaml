@@ -23,4 +23,4 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: build --snapshot --rm-dist
+          args: build --snapshot --clean
