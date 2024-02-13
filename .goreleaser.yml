@@ -38,7 +38,7 @@ changelog:
     - '^test:'
 brews:
 - name: kube-capacity
-  tap:
+  repository:
     # The token determines the release type (Github/Gitlab).
     owner: robscott
     name: homebrew-tap
