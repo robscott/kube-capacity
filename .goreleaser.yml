@@ -14,14 +14,12 @@ builds:
   - 7
 archives:
 - name_template: |-
-    kube-capacity_{{ .Tag }}_{{ .Os }}_{{ .Arch -}}
+    kube-capacity_{{ .Tag }}_{{ .Os }}_
+    {{- if eq .Arch "amd64" }}x86_64{{ else if eq .Arch "386" }}i386{{ else }}{{ .Arch }}{{ end -}}
     {{- with .Arm -}}
       {{- if (eq . "6") -}}hf
       {{- else -}}v{{- . -}}
       {{- end -}}
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
     {{- end -}}
   format_overrides:
   - goos: windows
