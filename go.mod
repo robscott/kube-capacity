@@ -9,7 +9,7 @@ require (
 	k8s.io/apimachinery v0.29.2
 	k8s.io/client-go v0.29.2
 	k8s.io/kubectl v0.29.2
-	k8s.io/kubernetes v1.29.1
+	k8s.io/kubernetes v1.29.2
 	k8s.io/metrics v0.29.2
 	sigs.k8s.io/yaml v1.4.0
 )
