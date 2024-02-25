@@ -20,6 +20,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version string = "development"
+
 func init() {
 	rootCmd.AddCommand(versionCmd)
 }
@@ -28,6 +30,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of kube-capacity",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("kube-capacity version v0.7.4")
+		fmt.Printf("kube-capacity version %s\n", version)
 	},
 }
