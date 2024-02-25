@@ -1,6 +1,8 @@
 builds:
 - env:
   - CGO_ENABLED=0
+  ldflags:
+      - -X github.com/robscott/kube-capacity/pkg/cmd.version={{.Version}}
   goos:
   - linux
   - darwin
@@ -8,10 +10,10 @@ builds:
   goarch:
   - arm64
   - amd64
-  - 386
+  - "386"
   goarm:
-  - 6
-  - 7
+  - "6"
+  - "7"
 archives:
 - name_template: |-
     kube-capacity_{{ .Tag }}_{{ .Os }}_
