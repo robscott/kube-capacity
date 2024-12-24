@@ -69,6 +69,8 @@ func init() {
 		"context", "", "", "context to use for Kubernetes config")
 	rootCmd.PersistentFlags().StringVarP(&opts.KubeConfig,
 		"kubeconfig", "", "", "kubeconfig file to use for Kubernetes config")
+	rootCmd.PersistentFlags().BoolVarP(&opts.InsecureSkipTLSVerify,
+		"insecure-skip-tls-verify", "", false, "If true, the server's certificate will not be checked for validity. This will make your HTTPS connections insecure")
 	rootCmd.PersistentFlags().StringVarP(&opts.SortBy,
 		"sort", "", "name",
 		fmt.Sprintf("attribute to sort results by (supports: %v)", capacity.SupportedSortAttributes))
