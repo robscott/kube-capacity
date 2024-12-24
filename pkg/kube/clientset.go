@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 
 	// Required for GKE, OIDC, and more
@@ -25,8 +26,8 @@ import (
 )
 
 // NewClientSet returns a new Kubernetes clientset
-func NewClientSet(kubeContext, kubeConfig string, impersonateUser string, impersonateGroup string) (*kubernetes.Clientset, error) {
-	config, err := getKubeConfig(kubeContext, kubeConfig)
+func NewClientSet(kubeContext, kubeConfig string, FlagInsecure bool, impersonateUser string, impersonateGroup string) (*kubernetes.Clientset, error) {
+	config, err := getKubeConfig(kubeContext, kubeConfig, FlagInsecure)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +46,8 @@ func NewClientSet(kubeContext, kubeConfig string, impersonateUser string, impers
 }
 
 // NewMetricsClientSet returns a new clientset for Kubernetes metrics
-func NewMetricsClientSet(kubeContext, kubeConfig string) (*metrics.Clientset, error) {
-	config, err := getKubeConfig(kubeContext, kubeConfig)
+func NewMetricsClientSet(kubeContext, kubeConfig string, FlagInsecure bool) (*metrics.Clientset, error) {
+	config, err := getKubeConfig(kubeContext, kubeConfig, FlagInsecure)
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +55,13 @@ func NewMetricsClientSet(kubeContext, kubeConfig string) (*metrics.Clientset, er
 	return metrics.NewForConfig(config)
 }
 
-func getKubeConfig(kubeContext, kubeConfig string) (*rest.Config, error) {
+func getKubeConfig(kubeContext, kubeConfig string, insecureSkipTLSVerify bool) (*rest.Config, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if kubeConfig != "" {
 		loadingRules.ExplicitPath = kubeConfig
 	}
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		loadingRules,
-		&clientcmd.ConfigOverrides{CurrentContext: kubeContext},
+		&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{InsecureSkipTLSVerify: insecureSkipTLSVerify}, CurrentContext: kubeContext},
 	).ClientConfig()
 }
