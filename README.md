@@ -16,6 +16,9 @@ brew install robscott/tap/kube-capacity
 
 ### Krew
 This project can be installed with [Krew](https://github.com/GoogleContainerTools/krew):
+
+> **_NOTE:_** If kube-capacity was installed using Krew, use `kubectl resource-capacity` instead of `kube-capacity`.
+
 ```
 kubectl krew install resource-capacity
 ```
