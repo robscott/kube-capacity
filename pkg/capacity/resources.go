@@ -55,30 +55,34 @@ type resourceMetric struct {
 type clusterMetric struct {
 	cpu         *resourceMetric
 	memory      *resourceMetric
+	ephemeralStorage *resourceMetric
 	nodeMetrics map[string]*nodeMetric
 	podCount    *podCount
 }
 
 type nodeMetric struct {
-	name       string
-	cpu        *resourceMetric
-	memory     *resourceMetric
-	podMetrics map[string]*podMetric
-	podCount   *podCount
+	name              string
+	cpu               *resourceMetric
+	memory            *resourceMetric
+	ephemeralStorage  *resourceMetric
+	podMetrics        map[string]*podMetric
+	podCount          *podCount
 }
 
 type podMetric struct {
-	name             string
-	namespace        string
-	cpu              *resourceMetric
-	memory           *resourceMetric
-	containerMetrics map[string]*containerMetric
+	name              string
+	namespace         string
+	cpu               *resourceMetric
+	memory            *resourceMetric
+	ephemeralStorage  *resourceMetric
+	containerMetrics  map[string]*containerMetric
 }
 
 type containerMetric struct {
-	name   string
-	cpu    *resourceMetric
-	memory *resourceMetric
+	name              string
+	cpu               *resourceMetric
+	memory            *resourceMetric
+	ephemeralStorage  *resourceMetric
 }
 
 type podCount struct {
@@ -91,6 +95,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 	cm := clusterMetric{
 		cpu:         &resourceMetric{resourceType: "cpu"},
 		memory:      &resourceMetric{resourceType: "memory"},
+		ephemeralStorage: &resourceMetric{resourceType: "ephemeral-storage"},
 		nodeMetrics: map[string]*nodeMetric{},
 		podCount:    &podCount{},
 	}
@@ -116,6 +121,10 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				resourceType: "memory",
 				allocatable:  node.Status.Allocatable["memory"],
 			},
+			ephemeralStorage: &resourceMetric{
+				resourceType: "ephemeral-storage",
+				allocatable:  node.Status.Allocatable["ephemeral-storage"],
+			},
 			podMetrics: map[string]*podMetric{},
 			podCount: &podCount{
 				current:     tmpPodCount,
@@ -134,6 +143,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 			}
 			cm.nodeMetrics[nm.Name].cpu.utilization = nm.Usage["cpu"]
 			cm.nodeMetrics[nm.Name].memory.utilization = nm.Usage["memory"]
+			cm.nodeMetrics[nm.Name].ephemeralStorage.utilization = nm.Usage["ephemeral-storage"]
 		}
 	}
 
@@ -189,6 +199,11 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 			request:      req["memory"],
 			limit:        limit["memory"],
 		},
+		ephemeralStorage: &resourceMetric{
+			resourceType: "ephemeral-storage",
+			request:      req["ephemeral-storage"],
+			limit:        limit["ephemeral-storage"],
+		},
 		containerMetrics: map[string]*containerMetric{},
 	}
 
@@ -207,6 +222,12 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 				limit:        container.Resources.Limits["memory"],
 				allocatable:  nm.memory.allocatable,
 			},
+			ephemeralStorage: &resourceMetric{
+				resourceType: "ephemeral-storage",
+				request:      container.Resources.Requests["ephemeral-storage"],
+				limit:        container.Resources.Limits["ephemeral-storage"],
+				allocatable:  nm.ephemeralStorage.allocatable,
+			},
 		}
 	}
 
@@ -214,11 +235,14 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 		nm.podMetrics[key] = pm
 		nm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
 		nm.podMetrics[key].memory.allocatable = nm.memory.allocatable
+		nm.podMetrics[key].ephemeralStorage.allocatable = nm.ephemeralStorage.allocatable
 
 		nm.cpu.request.Add(req["cpu"])
 		nm.cpu.limit.Add(limit["cpu"])
 		nm.memory.request.Add(req["memory"])
 		nm.memory.limit.Add(limit["memory"])
+		nm.ephemeralStorage.request.Add(req["ephemeral-storage"])
+		nm.ephemeralStorage.limit.Add(limit["ephemeral-storage"])
 	}
 
 	for _, container := range podMetrics.Containers {
@@ -228,6 +252,8 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 			pm.cpu.utilization.Add(container.Usage["cpu"])
 			pm.containerMetrics[container.Name].memory.utilization = container.Usage["memory"]
 			pm.memory.utilization.Add(container.Usage["memory"])
+			pm.containerMetrics[container.Name].ephemeralStorage.utilization = container.Usage["ephemeral-storage"]
+			pm.ephemeralStorage.utilization.Add(container.Usage["ephemeral-storage"])
 		}
 	}
 }
@@ -235,6 +261,7 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 func (cm *clusterMetric) addNodeMetric(nm *nodeMetric) {
 	cm.cpu.addMetric(nm.cpu)
 	cm.memory.addMetric(nm.memory)
+	cm.ephemeralStorage.addMetric(nm.ephemeralStorage)
 }
 
 func (cm *clusterMetric) getSortedNodeMetrics(sortBy string) []*nodeMetric {
@@ -333,6 +360,7 @@ func (nm *nodeMetric) addPodUtilization() {
 	for _, pm := range nm.podMetrics {
 		nm.cpu.utilization.Add(pm.cpu.utilization)
 		nm.memory.utilization.Add(pm.memory.utilization)
+		nm.ephemeralStorage.utilization.Add(pm.ephemeralStorage.utilization)
 	}
 }
 
@@ -403,6 +431,9 @@ func resourceString(resourceType string, actual, allocatable resource.Quantity, 
 		case "memory":
 			actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
 			allocatableStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable))
+		case "ephemeral-storage":
+			actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable)-formatToMegiBytes(actual))
+			allocatableStr = fmt.Sprintf("%dMi", formatToMegiBytes(allocatable))
 		default:
 			actualStr = fmt.Sprintf("%d", allocatable.Value()-actual.Value())
 			allocatableStr = fmt.Sprintf("%d", allocatable.Value())
@@ -415,6 +446,8 @@ func resourceString(resourceType string, actual, allocatable resource.Quantity, 
 	case "cpu":
 		actualStr = fmt.Sprintf("%dm", actual.MilliValue())
 	case "memory":
+		actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(actual))
+	case "ephemeral-storage":
 		actualStr = fmt.Sprintf("%dMi", formatToMegiBytes(actual))
 	default:
 		actualStr = fmt.Sprintf("%d", actual.Value())
@@ -442,6 +475,10 @@ func (rm resourceMetric) valueFunction() (f func(r resource.Quantity) string) {
 		f = func(r resource.Quantity) string {
 			return fmt.Sprintf("%dMi", formatToMegiBytes(r))
 		}
+	case "ephemeral-storage":
+		f = func(r resource.Quantity) string {
+			return fmt.Sprintf("%dMi", formatToMegiBytes(r))
+		}
 	}
 	return f
 }
@@ -462,7 +499,7 @@ func (rm resourceMetric) percent(r resource.Quantity) int64 {
 // -----------------------------------------
 
 func resourceCSVString(resourceType string, actual resource.Quantity) string {
-	if resourceType == "memory" {
+	if resourceType == "memory" || resourceType == "ephemeral-storage" {
 		return fmt.Sprintf("%d", formatToMegiBytes(actual))
 	}
 	return fmt.Sprintf("%d", actual.MilliValue())
