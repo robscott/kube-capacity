@@ -69,6 +69,14 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			w:               new(tabwriter.Writer),
 			availableFormat: availableFormat,
 		}
+		if !tp.hasVisibleColumns() {
+			fmt.Println("Error: No data columns selected for display. At least one of the following must be enabled:")
+			fmt.Println("- Resource requests (enabled by default, disabled with --no-requests)")
+			fmt.Println("- Resource limits (enabled by default, disabled with --no-limits)") 
+			fmt.Println("- Resource utilization (enabled with --util)")
+			fmt.Println("- Pod count (enabled with --pod-count)")
+			os.Exit(1)
+		}
 		tp.Print()
 	} else if output == CSVOutput || output == TSVOutput {
 		cp := &csvPrinter{
