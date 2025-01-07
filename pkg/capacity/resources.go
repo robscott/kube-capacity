@@ -38,6 +38,7 @@ var SupportedSortAttributes = [...]string{
 	"mem.util.percentage",
 	"mem.request.percentage",
 	"mem.limit.percentage",
+	"pod.count",
 	"name",
 }
 
@@ -275,6 +276,8 @@ func (cm *clusterMetric) getSortedNodeMetrics(sortBy string) []*nodeMetric {
 			return m2.memory.percent(m2.memory.limit) < m1.memory.percent(m1.memory.limit)
 		case "mem.request.percentage":
 			return m2.memory.percent(m2.memory.request) < m1.memory.percent(m1.memory.request)
+		case "pod.count":
+			return m2.podCount.current < m1.podCount.current
 		default:
 			return m1.name < m2.name
 		}
