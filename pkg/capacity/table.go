@@ -35,6 +35,11 @@ type tablePrinter struct {
 	availableFormat bool
 }
 
+func (tp *tablePrinter) hasVisibleColumns() bool {
+	// Check if any data columns will be shown
+	return !tp.hideRequests || !tp.hideLimits || tp.showUtil || tp.showPodCount
+}
+
 type tableLine struct {
 	node           string
 	namespace      string
