@@ -81,6 +81,10 @@ func init() {
 		"as", "", "", "user to impersonate kube-capacity with")
 	rootCmd.PersistentFlags().StringVarP(&opts.ImpersonateGroup,
 		"as-group", "", "", "group to impersonate kube-capacity with")
+	rootCmd.PersistentFlags().BoolVarP(&opts.HideRequests,
+		"no-requests", "", false, "hide requests from output")
+	rootCmd.PersistentFlags().BoolVarP(&opts.HideLimits,
+		"no-limits", "", false, "hide limits from output") 
 }
 
 // Execute is the primary entrypoint for this CLI
