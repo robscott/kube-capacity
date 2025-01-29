@@ -6,6 +6,8 @@
 *.dylib
 main
 dist
+bin
+kubectl-resource_capacity
 
 # Test binary, built with `go test -c`
 *.test
