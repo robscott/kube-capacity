@@ -100,7 +100,7 @@ func (tp *tablePrinter) Print() {
 
 func (tp *tablePrinter) printLine(tl *tableLine) {
 	lineItems := tp.getLineItems(tl)
-	fmt.Fprintf(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
+	_, _ = fmt.Fprintln(tp.w, strings.Join(lineItems[:], "\t "))
 }
 
 func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
