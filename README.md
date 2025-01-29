@@ -210,6 +210,12 @@ There are already some great projects out there that have similar goals.
 - [kube-resource-report](https://github.com/hjacobs/kube-resource-report): generates HTML/CSS report for resource requests and limits across multiple clusters.
 - [kubetop](https://github.com/LeastAuthority/kubetop): a CLI similar to top for Kubernetes, focused on resource utilization (not requests and limits).
 
+## Development
+
+run `make` to run all tests
+
+see `Makefile` for more commands
+
 ## Contributors
 
 Although this project was originally developed by [robscott](https://github.com/robscott), there have been some great contributions from others:
