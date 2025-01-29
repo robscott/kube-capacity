@@ -118,7 +118,7 @@ func (cp *csvPrinter) printLine(cl *csvLine) {
 
 	lineItems := cp.getLineItems(cl)
 
-	fmt.Fprintf(cp.file, strings.Join(lineItems[:], separator)+"\n")
+	_, _ = fmt.Fprintln(cp.file, strings.Join(lineItems[:], separator))
 }
 
 func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
