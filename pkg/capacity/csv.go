@@ -31,6 +31,8 @@ type csvPrinter struct {
 	sortBy         string
 	file           io.Writer
 	separator      string
+	hideRequests   bool
+	hideLimits     bool
 }
 
 type csvLine struct {
@@ -118,7 +120,7 @@ func (cp *csvPrinter) printLine(cl *csvLine) {
 
 	lineItems := cp.getLineItems(cl)
 
-	fmt.Fprintf(cp.file, strings.Join(lineItems[:], separator)+"\n")
+	fmt.Fprint(cp.file, strings.Join(lineItems[:], separator)+"\n")
 }
 
 func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
@@ -136,10 +138,14 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 	}
 
 	lineItems = append(lineItems, cl.cpuCapacity)
-	lineItems = append(lineItems, cl.cpuRequests)
-	lineItems = append(lineItems, cl.cpuRequestsPercentage)
-	lineItems = append(lineItems, cl.cpuLimits)
-	lineItems = append(lineItems, cl.cpuLimitsPercentage)
+	if !cp.hideRequests {
+		lineItems = append(lineItems, cl.cpuRequests)
+		lineItems = append(lineItems, cl.cpuRequestsPercentage)
+	}
+	if !cp.hideLimits {
+		lineItems = append(lineItems, cl.cpuLimits)
+		lineItems = append(lineItems, cl.cpuLimitsPercentage)
+	}
 
 	if cp.showUtil {
 		lineItems = append(lineItems, cl.cpuUtil)
@@ -147,10 +153,14 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 	}
 
 	lineItems = append(lineItems, cl.memoryCapacity)
-	lineItems = append(lineItems, cl.memoryRequests)
-	lineItems = append(lineItems, cl.memoryRequestsPercentage)
-	lineItems = append(lineItems, cl.memoryLimits)
-	lineItems = append(lineItems, cl.memoryLimitsPercentage)
+	if !cp.hideRequests {
+		lineItems = append(lineItems, cl.memoryRequests)
+		lineItems = append(lineItems, cl.memoryRequestsPercentage)
+	}
+	if !cp.hideLimits {
+		lineItems = append(lineItems, cl.memoryLimits)
+		lineItems = append(lineItems, cl.memoryLimitsPercentage)
+	}
 
 	if cp.showUtil {
 		lineItems = append(lineItems, cl.memoryUtil)
