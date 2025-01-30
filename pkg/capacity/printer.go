@@ -44,7 +44,7 @@ func SupportedOutputs() []string {
 	}
 }
 
-func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCount, showNamespace bool, output, sortBy string, availableFormat bool) {
+func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCount, showNamespace bool, hideRequests, hideLimits bool, output, sortBy string, availableFormat bool) {
 	if output == JSONOutput || output == YAMLOutput {
 		lp := &listPrinter{
 			cm:             cm,
@@ -52,6 +52,8 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showUtil:       showUtil,
 			showContainers: showContainers,
 			showPodCount:   showPodCount,
+			hideRequests:   hideRequests,
+			hideLimits:     hideLimits,
 			sortBy:         sortBy,
 		}
 		lp.Print(output)
@@ -63,9 +65,19 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showPodCount:    showPodCount,
 			showContainers:  showContainers,
 			showNamespace:   showNamespace,
+			hideRequests:    hideRequests,
+			hideLimits:      hideLimits,
 			sortBy:          sortBy,
 			w:               new(tabwriter.Writer),
 			availableFormat: availableFormat,
+		}
+		if !tp.hasVisibleColumns() {
+			fmt.Println("Error: No data columns selected for display. At least one of the following must be enabled:")
+			fmt.Println("- Resource requests (enabled by default, disabled with --hide-requests)")
+			fmt.Println("- Resource limits (enabled by default, disabled with --hide-limits)")
+			fmt.Println("- Resource utilization (enabled with --util)")
+			fmt.Println("- Pod count (enabled with --pod-count)")
+			os.Exit(1)
 		}
 		tp.Print()
 	} else if output == CSVOutput || output == TSVOutput {
@@ -76,6 +88,8 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showPodCount:   showPodCount,
 			showContainers: showContainers,
 			showNamespace:  showNamespace,
+			hideRequests:   hideRequests,
+			hideLimits:     hideLimits,
 			sortBy:         sortBy,
 		}
 		cp.Print(output)

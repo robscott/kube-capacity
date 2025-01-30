@@ -28,9 +28,16 @@ type tablePrinter struct {
 	showPodCount    bool
 	showContainers  bool
 	showNamespace   bool
+	hideRequests    bool
+	hideLimits      bool
 	sortBy          string
 	w               *tabwriter.Writer
 	availableFormat bool
+}
+
+func (tp *tablePrinter) hasVisibleColumns() bool {
+	// Check if any data columns will be shown
+	return !tp.hideRequests || !tp.hideLimits || tp.showUtil || tp.showPodCount
 }
 
 type tableLine struct {
@@ -100,7 +107,7 @@ func (tp *tablePrinter) Print() {
 
 func (tp *tablePrinter) printLine(tl *tableLine) {
 	lineItems := tp.getLineItems(tl)
-	fmt.Fprintf(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
+	_, _ = fmt.Fprint(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
 }
 
 func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
@@ -117,15 +124,23 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.container)
 	}
 
-	lineItems = append(lineItems, tl.cpuRequests)
-	lineItems = append(lineItems, tl.cpuLimits)
+	if !tp.hideRequests {
+		lineItems = append(lineItems, tl.cpuRequests)
+	}
+	if !tp.hideLimits {
+		lineItems = append(lineItems, tl.cpuLimits)
+	}
 
 	if tp.showUtil {
 		lineItems = append(lineItems, tl.cpuUtil)
 	}
 
-	lineItems = append(lineItems, tl.memoryRequests)
-	lineItems = append(lineItems, tl.memoryLimits)
+	if !tp.hideRequests {
+		lineItems = append(lineItems, tl.memoryRequests)
+	}
+	if !tp.hideLimits {
+		lineItems = append(lineItems, tl.memoryLimits)
+	}
 
 	if tp.showUtil {
 		lineItems = append(lineItems, tl.memoryUtil)
