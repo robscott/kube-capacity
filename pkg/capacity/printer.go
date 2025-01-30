@@ -64,15 +64,15 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showContainers:  showContainers,
 			showNamespace:   showNamespace,
 			hideRequests:    hideRequests,
-			hideLimits:     hideLimits,
+			hideLimits:      hideLimits,
 			sortBy:          sortBy,
 			w:               new(tabwriter.Writer),
 			availableFormat: availableFormat,
 		}
 		if !tp.hasVisibleColumns() {
 			fmt.Println("Error: No data columns selected for display. At least one of the following must be enabled:")
-			fmt.Println("- Resource requests (enabled by default, disabled with --no-requests)")
-			fmt.Println("- Resource limits (enabled by default, disabled with --no-limits)") 
+			fmt.Println("- Resource requests (enabled by default, disabled with --hide-requests)")
+			fmt.Println("- Resource limits (enabled by default, disabled with --hide-limits)")
 			fmt.Println("- Resource utilization (enabled with --util)")
 			fmt.Println("- Pod count (enabled with --pod-count)")
 			os.Exit(1)

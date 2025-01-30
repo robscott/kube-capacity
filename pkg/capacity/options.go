@@ -7,8 +7,8 @@ type Options struct {
 	ShowPods              bool
 	ShowUtil              bool
 	ShowPodCount          bool
-	HideRequests         bool
-	HideLimits           bool
+	HideRequests          bool
+	HideLimits            bool
 	PodLabels             string
 	NodeLabels            string
 	NodeTaints            string
