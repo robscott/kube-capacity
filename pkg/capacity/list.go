@@ -44,10 +44,10 @@ type listContainer struct {
 }
 
 type listResourceOutput struct {
-	Requests       string `json:"requests"`
-	RequestsPct    string `json:"requestsPercent"`
-	Limits         string `json:"limits"`
-	LimitsPct      string `json:"limitsPercent"`
+	Requests       string `json:"requests,omitempty"`
+	RequestsPct    string `json:"requestsPercent,omitempty"`
+	Limits         string `json:"limits,omitempty"`
+	LimitsPct      string `json:"limitsPercent,omitempty"`
 	Utilization    string `json:"utilization,omitempty"`
 	UtilizationPct string `json:"utilizationPercent,omitempty"`
 }
@@ -70,6 +70,8 @@ type listPrinter struct {
 	showUtil       bool
 	showPodCount   bool
 	sortBy         string
+	hideRequests   bool
+	hideLimits     bool
 }
 
 func (lp listPrinter) Print(outputType string) {
@@ -149,11 +151,16 @@ func (lp *listPrinter) buildListResourceOutput(item *resourceMetric) *listResour
 	valueCalculator := item.valueFunction()
 	percentCalculator := item.percentFunction()
 
-	out := listResourceOutput{
-		Requests:    valueCalculator(item.request),
-		RequestsPct: percentCalculator(item.request),
-		Limits:      valueCalculator(item.limit),
-		LimitsPct:   percentCalculator(item.limit),
+	out := listResourceOutput{}
+
+	if !lp.hideRequests {
+		out.Requests = valueCalculator(item.request)
+		out.RequestsPct = percentCalculator(item.request)
+	}
+
+	if !lp.hideLimits {
+		out.Limits = valueCalculator(item.limit)
+		out.LimitsPct = percentCalculator(item.limit)
 	}
 
 	if lp.showUtil {

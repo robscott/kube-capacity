@@ -52,6 +52,8 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showUtil:       showUtil,
 			showContainers: showContainers,
 			showPodCount:   showPodCount,
+			hideRequests:   hideRequests,
+			hideLimits:     hideLimits,
 			sortBy:         sortBy,
 		}
 		lp.Print(output)
@@ -86,6 +88,8 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showPodCount:   showPodCount,
 			showContainers: showContainers,
 			showNamespace:  showNamespace,
+			hideRequests:   hideRequests,
+			hideLimits:     hideLimits,
 			sortBy:         sortBy,
 		}
 		cp.Print(output)
