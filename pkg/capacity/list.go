@@ -44,12 +44,14 @@ type listContainer struct {
 }
 
 type listResourceOutput struct {
-	Requests       string `json:"requests"`
-	RequestsPct    string `json:"requestsPercent"`
-	Limits         string `json:"limits"`
-	LimitsPct      string `json:"limitsPercent"`
-	Utilization    string `json:"utilization,omitempty"`
-	UtilizationPct string `json:"utilizationPercent,omitempty"`
+	Requests          string `json:"requests"`
+	RequestsPct       string `json:"requestsPercent"`
+	RequestsAvailable string `json:"requestsAvailable,omitempty"`
+	Limits           string `json:"limits"`
+	LimitsPct        string `json:"limitsPercent"`
+	LimitsAvailable  string `json:"limitsAvailable,omitempty"`
+	Utilization      string `json:"utilization,omitempty"`
+	UtilizationPct   string `json:"utilizationPercent,omitempty"`
 }
 
 type listClusterMetrics struct {
@@ -64,12 +66,13 @@ type listClusterTotals struct {
 }
 
 type listPrinter struct {
-	cm             *clusterMetric
-	showPods       bool
-	showContainers bool
-	showUtil       bool
-	showPodCount   bool
-	sortBy         string
+	cm              *clusterMetric
+	showPods        bool
+	showContainers  bool
+	showUtil        bool
+	showPodCount    bool
+	sortBy          string
+	availableFormat bool
 }
 
 func (lp listPrinter) Print(outputType string) {
@@ -154,6 +157,16 @@ func (lp *listPrinter) buildListResourceOutput(item *resourceMetric) *listResour
 		RequestsPct: percentCalculator(item.request),
 		Limits:      valueCalculator(item.limit),
 		LimitsPct:   percentCalculator(item.limit),
+	}
+
+	if lp.availableFormat {
+		available := item.allocatable.DeepCopy()
+		available.Sub(item.request)
+		out.RequestsAvailable = valueCalculator(available)
+
+		available = item.allocatable.DeepCopy()
+		available.Sub(item.limit)
+		out.LimitsAvailable = valueCalculator(available)
 	}
 
 	if lp.showUtil {
