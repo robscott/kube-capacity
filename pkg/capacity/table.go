@@ -29,7 +29,7 @@ type tablePrinter struct {
 	showContainers  bool
 	showNamespace   bool
 	hideRequests    bool
-	hideLimits     bool
+	hideLimits      bool
 	sortBy          string
 	w               *tabwriter.Writer
 	availableFormat bool
@@ -107,7 +107,7 @@ func (tp *tablePrinter) Print() {
 
 func (tp *tablePrinter) printLine(tl *tableLine) {
 	lineItems := tp.getLineItems(tl)
-	fmt.Fprintf(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
+	_, _ = fmt.Fprint(tp.w, strings.Join(lineItems[:], "\t ")+"\n")
 }
 
 func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
