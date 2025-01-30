@@ -181,8 +181,8 @@ kube-capacity --pods --containers --util --output tsv
       --kubeconfig string         kubeconfig file to use for Kubernetes config
   -n, --namespace string          only include pods from this namespace
       --namespace-labels string   labels to filter namespaces with
-      --hide-limits                 hide limits from output
-      --hide-requests               hide requests from output
+      --hide-limits               hide limits from output
+      --hide-requests             hide requests from output
       --no-taint                  exclude nodes with taints
       --node-labels string        labels to filter nodes with
   -o, --output string             output format for information
