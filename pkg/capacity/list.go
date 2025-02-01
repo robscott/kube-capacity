@@ -22,25 +22,28 @@ import (
 )
 
 type listNodeMetric struct {
-	Name     string              `json:"name"`
-	CPU      *listResourceOutput `json:"cpu,omitempty"`
-	Memory   *listResourceOutput `json:"memory,omitempty"`
-	Pods     []*listPod          `json:"pods,omitempty"`
-	PodCount string              `json:"podCount,omitempty"`
+	Name              string              `json:"name"`
+	CPU               *listResourceOutput `json:"cpu,omitempty"`
+	Memory            *listResourceOutput `json:"memory,omitempty"`
+	EphemeralStorage  *listResourceOutput `json:"ephemeralStorage,omitempty"`
+	Pods              []*listPod          `json:"pods,omitempty"`
+	PodCount          string              `json:"podCount,omitempty"`
 }
 
 type listPod struct {
-	Name       string              `json:"name"`
-	Namespace  string              `json:"namespace"`
-	CPU        *listResourceOutput `json:"cpu"`
-	Memory     *listResourceOutput `json:"memory"`
-	Containers []listContainer     `json:"containers,omitempty"`
+	Name              string              `json:"name"`
+	Namespace         string              `json:"namespace"`
+	CPU               *listResourceOutput `json:"cpu"`
+	Memory            *listResourceOutput `json:"memory"`
+	EphemeralStorage  *listResourceOutput `json:"ephemeralStorage,omitempty"`
+	Containers        []listContainer     `json:"containers,omitempty"`
 }
 
 type listContainer struct {
-	Name   string              `json:"name"`
-	CPU    *listResourceOutput `json:"cpu"`
-	Memory *listResourceOutput `json:"memory"`
+	Name              string              `json:"name"`
+	CPU               *listResourceOutput `json:"cpu"`
+	Memory            *listResourceOutput `json:"memory"`
+	EphemeralStorage  *listResourceOutput `json:"ephemeralStorage,omitempty"`
 }
 
 type listResourceOutput struct {
@@ -58,9 +61,10 @@ type listClusterMetrics struct {
 }
 
 type listClusterTotals struct {
-	CPU      *listResourceOutput `json:"cpu"`
-	Memory   *listResourceOutput `json:"memory"`
-	PodCount string              `json:"podCount,omitempty"`
+	CPU               *listResourceOutput `json:"cpu"`
+	Memory            *listResourceOutput `json:"memory"`
+	EphemeralStorage  *listResourceOutput `json:"ephemeralStorage,omitempty"`
+	PodCount          string              `json:"podCount,omitempty"`
 }
 
 type listPrinter struct {
@@ -103,6 +107,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 	response.ClusterTotals = &listClusterTotals{
 		CPU:    lp.buildListResourceOutput(lp.cm.cpu),
 		Memory: lp.buildListResourceOutput(lp.cm.memory),
+		EphemeralStorage: lp.buildListResourceOutput(lp.cm.ephemeralStorage),
 	}
 
 	if lp.showPodCount {
@@ -114,6 +119,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 		node.Name = nodeMetric.name
 		node.CPU = lp.buildListResourceOutput(nodeMetric.cpu)
 		node.Memory = lp.buildListResourceOutput(nodeMetric.memory)
+		node.EphemeralStorage = lp.buildListResourceOutput(nodeMetric.ephemeralStorage)
 
 		if lp.showPodCount {
 			node.PodCount = nodeMetric.podCount.podCountString()
@@ -126,6 +132,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 				pod.Namespace = podMetric.namespace
 				pod.CPU = lp.buildListResourceOutput(podMetric.cpu)
 				pod.Memory = lp.buildListResourceOutput(podMetric.memory)
+				pod.EphemeralStorage = lp.buildListResourceOutput(podMetric.ephemeralStorage)
 
 				if lp.showContainers {
 					for _, containerMetric := range podMetric.getSortedContainerMetrics(lp.sortBy) {
@@ -133,6 +140,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 							Name:   containerMetric.name,
 							Memory: lp.buildListResourceOutput(containerMetric.memory),
 							CPU:    lp.buildListResourceOutput(containerMetric.cpu),
+							EphemeralStorage: lp.buildListResourceOutput(containerMetric.ephemeralStorage),
 						})
 					}
 				}

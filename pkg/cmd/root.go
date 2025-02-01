@@ -51,6 +51,8 @@ func init() {
 		"util", "u", false, "includes resource utilization in output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.ShowPodCount,
 		"pod-count", "", false, "includes pod count per node in output")
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowEphemeralStorage,
+		"ephemeral-storage", "e", false, "includes ephemeral storage requests and limits in output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.AvailableFormat,
 		"available", "a", false, "includes quantity available instead of percentage used")
 	rootCmd.PersistentFlags().StringVarP(&opts.PodLabels,

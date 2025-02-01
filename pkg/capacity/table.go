@@ -34,31 +34,35 @@ type tablePrinter struct {
 }
 
 type tableLine struct {
-	node           string
-	namespace      string
-	pod            string
-	container      string
-	cpuRequests    string
-	cpuLimits      string
-	cpuUtil        string
-	memoryRequests string
-	memoryLimits   string
-	memoryUtil     string
-	podCount       string
+	node              string
+	namespace         string
+	pod               string
+	container         string
+	cpuRequests       string
+	cpuLimits         string
+	cpuUtil           string
+	memoryRequests    string
+	memoryLimits      string
+	memoryUtil        string
+	podCount          string
+	ephemeralRequests string
+	ephemeralLimits   string
 }
 
 var headerStrings = tableLine{
-	node:           "NODE",
-	namespace:      "NAMESPACE",
-	pod:            "POD",
-	container:      "CONTAINER",
-	cpuRequests:    "CPU REQUESTS",
-	cpuLimits:      "CPU LIMITS",
-	cpuUtil:        "CPU UTIL",
-	memoryRequests: "MEMORY REQUESTS",
-	memoryLimits:   "MEMORY LIMITS",
-	memoryUtil:     "MEMORY UTIL",
-	podCount:       "POD COUNT",
+	node:              "NODE",
+	namespace:         "NAMESPACE",
+	pod:               "POD",
+	container:         "CONTAINER",
+	cpuRequests:       "CPU REQUESTS",
+	cpuLimits:         "CPU LIMITS",
+	cpuUtil:           "CPU UTIL",
+	memoryRequests:    "MEMORY REQUESTS",
+	memoryLimits:      "MEMORY LIMITS",
+	memoryUtil:        "MEMORY UTIL",
+	podCount:          "POD COUNT",
+	ephemeralRequests: "EPHEMERAL REQUESTS",
+	ephemeralLimits:   "EPHEMERAL LIMITS",
 }
 
 func (tp *tablePrinter) Print() {
@@ -131,6 +135,9 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.memoryUtil)
 	}
 
+	lineItems = append(lineItems, tl.ephemeralRequests)
+	lineItems = append(lineItems, tl.ephemeralLimits)
+
 	if tp.showPodCount {
 		lineItems = append(lineItems, tl.podCount)
 	}
@@ -140,62 +147,70 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 
 func (tp *tablePrinter) printClusterLine() {
 	tp.printLine(&tableLine{
-		node:           VoidValue,
-		namespace:      VoidValue,
-		pod:            VoidValue,
-		container:      VoidValue,
-		cpuRequests:    tp.cm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      tp.cm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        tp.cm.cpu.utilString(tp.availableFormat),
-		memoryRequests: tp.cm.memory.requestString(tp.availableFormat),
-		memoryLimits:   tp.cm.memory.limitString(tp.availableFormat),
-		memoryUtil:     tp.cm.memory.utilString(tp.availableFormat),
-		podCount:       tp.cm.podCount.podCountString(),
+		node:              VoidValue,
+		namespace:         VoidValue,
+		pod:               VoidValue,
+		container:         VoidValue,
+		cpuRequests:       tp.cm.cpu.requestString(tp.availableFormat),
+		cpuLimits:         tp.cm.cpu.limitString(tp.availableFormat),
+		cpuUtil:           tp.cm.cpu.utilString(tp.availableFormat),
+		memoryRequests:    tp.cm.memory.requestString(tp.availableFormat),
+		memoryLimits:      tp.cm.memory.limitString(tp.availableFormat),
+		memoryUtil:        tp.cm.memory.utilString(tp.availableFormat),
+		ephemeralRequests: tp.cm.ephemeralStorage.requestString(tp.availableFormat),
+		ephemeralLimits:   tp.cm.ephemeralStorage.limitString(tp.availableFormat),
+		podCount:          tp.cm.podCount.podCountString(),
 	})
 }
 
 func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
-		namespace:      VoidValue,
-		pod:            VoidValue,
-		container:      VoidValue,
-		cpuRequests:    nm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      nm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        nm.cpu.utilString(tp.availableFormat),
-		memoryRequests: nm.memory.requestString(tp.availableFormat),
-		memoryLimits:   nm.memory.limitString(tp.availableFormat),
-		memoryUtil:     nm.memory.utilString(tp.availableFormat),
-		podCount:       nm.podCount.podCountString(),
+		node:              nodeName,
+		namespace:         VoidValue,
+		pod:               VoidValue,
+		container:         VoidValue,
+		cpuRequests:       nm.cpu.requestString(tp.availableFormat),
+		cpuLimits:         nm.cpu.limitString(tp.availableFormat),
+		cpuUtil:           nm.cpu.utilString(tp.availableFormat),
+		memoryRequests:    nm.memory.requestString(tp.availableFormat),
+		memoryLimits:      nm.memory.limitString(tp.availableFormat),
+		memoryUtil:        nm.memory.utilString(tp.availableFormat),
+		ephemeralRequests: nm.ephemeralStorage.requestString(tp.availableFormat),
+		ephemeralLimits:   nm.ephemeralStorage.limitString(tp.availableFormat),
+		podCount:          nm.podCount.podCountString(),
 	})
 }
 
 func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
-		namespace:      pm.namespace,
-		pod:            pm.name,
-		container:      VoidValue,
-		cpuRequests:    pm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      pm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        pm.cpu.utilString(tp.availableFormat),
-		memoryRequests: pm.memory.requestString(tp.availableFormat),
-		memoryLimits:   pm.memory.limitString(tp.availableFormat),
-		memoryUtil:     pm.memory.utilString(tp.availableFormat),
+		node:              nodeName,
+		namespace:         pm.namespace,
+		pod:               pm.name,
+		container:         VoidValue,
+		cpuRequests:       pm.cpu.requestString(tp.availableFormat),
+		cpuLimits:         pm.cpu.limitString(tp.availableFormat),
+		cpuUtil:           pm.cpu.utilString(tp.availableFormat),
+		memoryRequests:    pm.memory.requestString(tp.availableFormat),
+		memoryLimits:      pm.memory.limitString(tp.availableFormat),
+		memoryUtil:        pm.memory.utilString(tp.availableFormat),
+		ephemeralRequests: pm.ephemeralStorage.requestString(tp.availableFormat),
+		ephemeralLimits:   pm.ephemeralStorage.limitString(tp.availableFormat),
 	})
 }
 
 func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
-		namespace:      pm.namespace,
-		pod:            pm.name,
-		container:      cm.name,
-		cpuRequests:    cm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      cm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        cm.cpu.utilString(tp.availableFormat),
-		memoryRequests: cm.memory.requestString(tp.availableFormat),
-		memoryLimits:   cm.memory.limitString(tp.availableFormat),
-		memoryUtil:     cm.memory.utilString(tp.availableFormat),
+		node:              nodeName,
+		namespace:         pm.namespace,
+		pod:               pm.name,
+		container:         cm.name,
+		cpuRequests:       cm.cpu.requestString(tp.availableFormat),
+		cpuLimits:         cm.cpu.limitString(tp.availableFormat),
+		cpuUtil:           cm.cpu.utilString(tp.availableFormat),
+		memoryRequests:    cm.memory.requestString(tp.availableFormat),
+		memoryLimits:      cm.memory.limitString(tp.availableFormat),
+		memoryUtil:        cm.memory.utilString(tp.availableFormat),
+		ephemeralRequests: cm.ephemeralStorage.requestString(tp.availableFormat),
+		ephemeralLimits:   cm.ephemeralStorage.limitString(tp.availableFormat),
 	})
 }

@@ -7,6 +7,7 @@ type Options struct {
 	ShowPods              bool
 	ShowUtil              bool
 	ShowPodCount          bool
+	ShowEphemeralStorage  bool // New flag for ephemeral storage
 	PodLabels             string
 	NodeLabels            string
 	NodeTaints            string

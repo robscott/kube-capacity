@@ -156,6 +156,35 @@ kube-capacity --no-taint
 ```
 This will filter out all nodes with taints. 
 
+### Ephemeral Storage Support
+kube-capacity supports displaying ephemeral storage requests and limits for containers in your cluster. This can be enabled using the `-e` or `--ephemeral-storage` flag:
+
+```
+kube-capacity --ephemeral-storage
+```
+
+This will include ephemeral storage allocation information in the output, showing:
+- Ephemeral storage requests
+- Ephemeral storage limits
+- Usage across nodes, pods, and containers (when used with respective flags)
+
+Example output with ephemeral storage enabled:
+```
+NODE              EPHEMERAL-STORAGE-REQUESTS    EPHEMERAL-STORAGE-LIMITS
+*                 100Gi/400Gi (25%)             200Gi/400Gi (50%)
+example-node-1    40Gi/200Gi (20%)              80Gi/200Gi (40%)
+example-node-2    60Gi/200Gi (30%)              120Gi/200Gi (60%)
+```
+
+When combined with the pods flag (`-p`), it will show per-pod ephemeral storage allocation:
+```
+NODE              NAMESPACE    POD                EPHEMERAL-STORAGE-REQUESTS    EPHEMERAL-STORAGE-LIMITS
+*                 *            *                  100Gi/400Gi (25%)             200Gi/400Gi (50%)
+example-node-1    default     nginx-pod          20Gi/200Gi (10%)              40Gi/200Gi (20%)
+example-node-1    app         web-server         20Gi/200Gi (10%)              40Gi/200Gi (20%)
+example-node-2    database    postgres-main      60Gi/200Gi (30%)              120Gi/200Gi (60%)
+```
+
 ### JSON and YAML Output
 By default, kube-capacity will provide output in a table format. To view this data in JSON or YAML format, the output flag can be used. Here are some sample commands:
 ```
