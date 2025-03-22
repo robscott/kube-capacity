@@ -44,7 +44,7 @@ func SupportedOutputs() []string {
 	}
 }
 
-func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCount, showNamespace bool, hideRequests, hideLimits bool, output, sortBy string, availableFormat bool) {
+func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCount, showLabels, showNamespace bool, hideRequests, hideLimits bool, output, sortBy string, availableFormat bool) {
 	if output == JSONOutput || output == YAMLOutput {
 		lp := &listPrinter{
 			cm:             cm,
@@ -52,6 +52,7 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showUtil:       showUtil,
 			showContainers: showContainers,
 			showPodCount:   showPodCount,
+			showLabels:     showLabels,
 			hideRequests:   hideRequests,
 			hideLimits:     hideLimits,
 			sortBy:         sortBy,
@@ -63,6 +64,7 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showPods:        showPods,
 			showUtil:        showUtil,
 			showPodCount:    showPodCount,
+			showLabels:      showLabels,
 			showContainers:  showContainers,
 			showNamespace:   showNamespace,
 			hideRequests:    hideRequests,
@@ -77,6 +79,7 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			fmt.Println("- Resource limits (enabled by default, disabled with --hide-limits)")
 			fmt.Println("- Resource utilization (enabled with --util)")
 			fmt.Println("- Pod count (enabled with --pod-count)")
+			fmt.Println("- Node labels (enabled with --show-labels)")
 			os.Exit(1)
 		}
 		tp.Print()
@@ -86,6 +89,7 @@ func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCou
 			showPods:       showPods,
 			showUtil:       showUtil,
 			showPodCount:   showPodCount,
+			showLabels:     showLabels,
 			showContainers: showContainers,
 			showNamespace:  showNamespace,
 			hideRequests:   hideRequests,

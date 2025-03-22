@@ -26,6 +26,7 @@ type csvPrinter struct {
 	showPods       bool
 	showUtil       bool
 	showPodCount   bool
+	showLabels     bool
 	showContainers bool
 	showNamespace  bool
 	sortBy         string
@@ -56,6 +57,7 @@ type csvLine struct {
 	memoryUtilPercentage     string
 	podCountCurrent          string
 	podCountAllocatable      string
+	labels                   string
 }
 
 var csvHeaderStrings = csvLine{
@@ -79,6 +81,7 @@ var csvHeaderStrings = csvLine{
 	memoryUtilPercentage:     "MEMORY UTIL %%",
 	podCountCurrent:          "POD COUNT CURRENT",
 	podCountAllocatable:      "POD COUNT ALLOCATABLE",
+	labels:                   "LABELS",
 }
 
 func (cp *csvPrinter) Print(outputType string) {
@@ -172,6 +175,10 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 		lineItems = append(lineItems, cl.podCountAllocatable)
 	}
 
+	if cp.showLabels {
+		lineItems = append(lineItems, cl.labels)
+	}
+
 	return lineItems
 }
 
@@ -197,6 +204,7 @@ func (cp *csvPrinter) printClusterLine() {
 		memoryUtilPercentage:     cp.cm.memory.utilPercentageString(),
 		podCountCurrent:          cp.cm.podCount.podCountCurrentString(),
 		podCountAllocatable:      cp.cm.podCount.podCountAllocatableString(),
+		labels:                   VoidValue,
 	})
 }
 
@@ -222,6 +230,7 @@ func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		memoryUtilPercentage:     nm.memory.utilPercentageString(),
 		podCountCurrent:          nm.podCount.podCountCurrentString(),
 		podCountAllocatable:      nm.podCount.podCountAllocatableString(),
+		labels:                   fmt.Sprintf("%q", nodeLabelsString(nm.labels)), // quote the labels to avoid CSV parsing issues
 	})
 }
 
