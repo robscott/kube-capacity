@@ -33,6 +33,7 @@ func TestGetLineItems(t *testing.T) {
 		showPods:       false,
 		showUtil:       false,
 		showPodCount:   false,
+		showLabels:     false,
 		showContainers: true,
 		showNamespace:  true,
 	}
@@ -43,6 +44,7 @@ func TestGetLineItems(t *testing.T) {
 		showContainers: true,
 		showNamespace:  true,
 		showPodCount:   true,
+		showLabels:     true,
 	}
 
 	tl := &tableLine{
@@ -57,6 +59,7 @@ func TestGetLineItems(t *testing.T) {
 		memoryLimits:   "2000Mi",
 		memoryUtil:     "326Mi",
 		podCount:       "1/110",
+		labels:         "zone=example-zone-1",
 	}
 
 	var testCases = []struct {
@@ -106,6 +109,7 @@ func TestGetLineItems(t *testing.T) {
 				"2000Mi",
 				"326Mi",
 				"1/110",
+				"zone=example-zone-1",
 			},
 		},
 	}
