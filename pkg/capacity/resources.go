@@ -20,6 +20,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -61,19 +62,21 @@ type clusterMetric struct {
 }
 
 type nodeMetric struct {
-	name       string
-	cpu        *resourceMetric
-	memory     *resourceMetric
-	podMetrics map[string]*podMetric
-	podCount   *podCount
+	name              string
+	cpu               *resourceMetric
+	memory            *resourceMetric
+	podMetrics        map[string]*podMetric
+	podCount          *podCount
+	creationTimeStamp v1.Time
 }
 
 type podMetric struct {
-	name             string
-	namespace        string
-	cpu              *resourceMetric
-	memory           *resourceMetric
-	containerMetrics map[string]*containerMetric
+	name              string
+	namespace         string
+	creationTimeStamp v1.Time
+	cpu               *resourceMetric
+	memory            *resourceMetric
+	containerMetrics  map[string]*containerMetric
 }
 
 type containerMetric struct {
@@ -108,7 +111,8 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 		totalPodCurrent += tmpPodCount
 		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 		cm.nodeMetrics[node.Name] = &nodeMetric{
-			name: node.Name,
+			name:              node.Name,
+			creationTimeStamp: node.CreationTimestamp,
 			cpu: &resourceMetric{
 				resourceType: "cpu",
 				allocatable:  node.Status.Allocatable["cpu"],
@@ -178,8 +182,9 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 	nm := cm.nodeMetrics[pod.Spec.NodeName]
 
 	pm := &podMetric{
-		name:      pod.Name,
-		namespace: pod.Namespace,
+		name:              pod.Name,
+		namespace:         pod.Namespace,
+		creationTimeStamp: pod.CreationTimestamp,
 		cpu: &resourceMetric{
 			resourceType: "cpu",
 			request:      req["cpu"],
@@ -239,8 +244,8 @@ func (cm *clusterMetric) addNodeMetric(nm *nodeMetric) {
 }
 
 func (cm *clusterMetric) getSortedNodeMetrics(sortBy string) []*nodeMetric {
+	// make a copy
 	sortedNodeMetrics := make([]*nodeMetric, len(cm.nodeMetrics))
-
 	i := 0
 	for name := range cm.nodeMetrics {
 		sortedNodeMetrics[i] = cm.nodeMetrics[name]
@@ -278,6 +283,8 @@ func (cm *clusterMetric) getSortedNodeMetrics(sortBy string) []*nodeMetric {
 			return m2.memory.percent(m2.memory.request) < m1.memory.percent(m1.memory.request)
 		case "pod.count":
 			return m2.podCount.current < m1.podCount.current
+		case "age":
+			return m2.creationTimeStamp.Before(&m1.creationTimeStamp)
 		default:
 			return m1.name < m2.name
 		}

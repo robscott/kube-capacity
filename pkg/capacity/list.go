@@ -18,23 +18,26 @@ import (
 	"encoding/json"
 	"fmt"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
 type listNodeMetric struct {
-	Name     string              `json:"name"`
-	CPU      *listResourceOutput `json:"cpu,omitempty"`
-	Memory   *listResourceOutput `json:"memory,omitempty"`
-	Pods     []*listPod          `json:"pods,omitempty"`
-	PodCount string              `json:"podCount,omitempty"`
+	Name              string              `json:"name"`
+	CreationTimeStamp v1.Time             `json:"creationTimeStamp"`
+	CPU               *listResourceOutput `json:"cpu,omitempty"`
+	Memory            *listResourceOutput `json:"memory,omitempty"`
+	Pods              []*listPod          `json:"pods,omitempty"`
+	PodCount          string              `json:"podCount,omitempty"`
 }
 
 type listPod struct {
-	Name       string              `json:"name"`
-	Namespace  string              `json:"namespace"`
-	CPU        *listResourceOutput `json:"cpu"`
-	Memory     *listResourceOutput `json:"memory"`
-	Containers []listContainer     `json:"containers,omitempty"`
+	Name              string              `json:"name"`
+	Namespace         string              `json:"namespace"`
+	CreationTimeStamp v1.Time             `json:"creationTimeStamp"`
+	CPU               *listResourceOutput `json:"cpu"`
+	Memory            *listResourceOutput `json:"memory"`
+	Containers        []listContainer     `json:"containers,omitempty"`
 }
 
 type listContainer struct {
@@ -108,6 +111,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 	for _, nodeMetric := range lp.cm.getSortedNodeMetrics(lp.opts.SortBy) {
 		var node listNodeMetric
 		node.Name = nodeMetric.name
+		node.CreationTimeStamp = nodeMetric.creationTimeStamp
 		node.CPU = lp.buildListResourceOutput(nodeMetric.cpu)
 		node.Memory = lp.buildListResourceOutput(nodeMetric.memory)
 
@@ -120,6 +124,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 				var pod listPod
 				pod.Name = podMetric.name
 				pod.Namespace = podMetric.namespace
+				pod.CreationTimeStamp = podMetric.creationTimeStamp
 				pod.CPU = lp.buildListResourceOutput(podMetric.cpu)
 				pod.Memory = lp.buildListResourceOutput(podMetric.memory)
 
