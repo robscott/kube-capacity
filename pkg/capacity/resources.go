@@ -110,7 +110,7 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 		cm.nodeMetrics[node.Name] = &nodeMetric{
 			name:   node.Name,
-			labels: node.Labels,
+			labels: map[string]string{},
 			cpu: &resourceMetric{
 				resourceType: "cpu",
 				allocatable:  node.Status.Allocatable["cpu"],
@@ -124,6 +124,10 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				current:     tmpPodCount,
 				allocatable: node.Status.Allocatable.Pods().Value(),
 			},
+		}
+
+		if node.Labels != nil {
+			cm.nodeMetrics[node.Name].labels = node.Labels
 		}
 	}
 
@@ -394,7 +398,7 @@ func (pc *podCount) podCountString() string {
 
 // nodeLabelsString returns the string representation of node labels map
 func nodeLabelsString(labels map[string]string) string {
-	if labels == nil || len(labels) == 0 {
+	if len(labels) == 0 {
 		return ""
 	}
 

@@ -144,7 +144,7 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.podCount)
 	}
 
-	if tp.showLabels {
+	if tp.opts.ShowLabels {
 		lineItems = append(lineItems, tl.labels)
 	}
 

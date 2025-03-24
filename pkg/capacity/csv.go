@@ -165,7 +165,7 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 		lineItems = append(lineItems, cl.podCountAllocatable)
 	}
 
-	if cp.showLabels {
+	if cp.opts.ShowLabels {
 		lineItems = append(lineItems, cl.labels)
 	}
 
