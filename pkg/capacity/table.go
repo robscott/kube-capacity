@@ -29,7 +29,7 @@ type tablePrinter struct {
 
 func (tp *tablePrinter) hasVisibleColumns() bool {
 	// Check if any data columns will be shown
-	return !tp.opts.HideRequests || !tp.opts.HideLimits || tp.opts.ShowUtil || tp.opts.ShowPodCount
+	return !tp.opts.HideRequests || !tp.opts.HideLimits || tp.opts.ShowUtil || tp.opts.ShowPodCount || tp.opts.ShowLabels
 }
 
 type tableLine struct {
@@ -44,6 +44,7 @@ type tableLine struct {
 	memoryLimits   string
 	memoryUtil     string
 	podCount       string
+	labels         string
 }
 
 var headerStrings = tableLine{
@@ -58,6 +59,7 @@ var headerStrings = tableLine{
 	memoryLimits:   "MEMORY LIMITS",
 	memoryUtil:     "MEMORY UTIL",
 	podCount:       "POD COUNT",
+	labels:         "LABELS",
 }
 
 func (tp *tablePrinter) Print() {
@@ -142,6 +144,10 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.podCount)
 	}
 
+	if tp.opts.ShowLabels {
+		lineItems = append(lineItems, tl.labels)
+	}
+
 	return lineItems
 }
 
@@ -158,6 +164,7 @@ func (tp *tablePrinter) printClusterLine() {
 		memoryLimits:   tp.cm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     tp.cm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       tp.cm.podCount.podCountString(),
+		labels:         VoidValue,
 	})
 }
 
@@ -174,6 +181,7 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		memoryLimits:   nm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       nm.podCount.podCountString(),
+		labels:         nodeLabelsString(nm.labels),
 	})
 }
 

@@ -62,6 +62,7 @@ type clusterMetric struct {
 
 type nodeMetric struct {
 	name       string
+	labels     map[string]string
 	cpu        *resourceMetric
 	memory     *resourceMetric
 	podMetrics map[string]*podMetric
@@ -108,7 +109,8 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 		totalPodCurrent += tmpPodCount
 		totalPodAllocatable += node.Status.Allocatable.Pods().Value()
 		cm.nodeMetrics[node.Name] = &nodeMetric{
-			name: node.Name,
+			name:   node.Name,
+			labels: map[string]string{},
 			cpu: &resourceMetric{
 				resourceType: "cpu",
 				allocatable:  node.Status.Allocatable["cpu"],
@@ -122,6 +124,10 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 				current:     tmpPodCount,
 				allocatable: node.Status.Allocatable.Pods().Value(),
 			},
+		}
+
+		if node.Labels != nil {
+			cm.nodeMetrics[node.Name].labels = node.Labels
 		}
 	}
 
@@ -388,6 +394,19 @@ func (rm *resourceMetric) utilString(availableFormat bool) string {
 // podCountString returns the string representation of podCount struct, example: "15/110"
 func (pc *podCount) podCountString() string {
 	return fmt.Sprintf("%d/%d", pc.current, pc.allocatable)
+}
+
+// nodeLabelsString returns the string representation of node labels map
+func nodeLabelsString(labels map[string]string) string {
+	if len(labels) == 0 {
+		return ""
+	}
+
+	var labelStr string
+	for key, value := range labels {
+		labelStr += fmt.Sprintf("%s=%s,", key, value)
+	}
+	return labelStr[:len(labelStr)-1]
 }
 
 func resourceString(resourceType string, actual, allocatable resource.Quantity, availableFormat bool) string {

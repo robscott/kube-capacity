@@ -121,6 +121,10 @@ func TestBuildClusterMetricFull(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "example-node-1",
+						Labels: map[string]string{
+							"example.io/os": "example-os-1",
+							"zone":          "example-zone-1",
+						},
 					},
 					Status: corev1.NodeStatus{
 						Allocatable: corev1.ResourceList{
@@ -182,6 +186,12 @@ func TestBuildClusterMetricFull(t *testing.T) {
 	ensureEqualResourceMetric(t, pm["default-example-pod"].cpu, cpuExpected)
 	assert.NotNil(t, pm["default-example-pod"].memory)
 	ensureEqualResourceMetric(t, pm["default-example-pod"].memory, memoryExpected)
+
+	node1LabelsExpected := map[string]string{
+		"example.io/os": "example-os-1",
+		"zone":          "example-zone-1",
+	}
+	assert.Equal(t, cm.nodeMetrics["example-node-1"].labels, node1LabelsExpected)
 }
 
 func TestSortByPodCount(t *testing.T) {

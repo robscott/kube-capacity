@@ -64,6 +64,7 @@ func printList(cm *clusterMetric, opts Options) {
 			fmt.Fprintln(os.Stderr, "- Resource limits (enabled by default, disabled with --hide-limits)")
 			fmt.Fprintln(os.Stderr, "- Resource utilization (enabled with --util)")
 			fmt.Fprintln(os.Stderr, "- Pod count (enabled with --pod-count)")
+			fmt.Fprintln(os.Stderr, "- Node labels (enabled with --show-labels)")
 			os.Exit(1)
 		}
 		tp.Print()
