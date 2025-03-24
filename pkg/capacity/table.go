@@ -22,22 +22,14 @@ import (
 )
 
 type tablePrinter struct {
-	cm              *clusterMetric
-	showPods        bool
-	showUtil        bool
-	showPodCount    bool
-	showContainers  bool
-	showNamespace   bool
-	hideRequests    bool
-	hideLimits      bool
-	sortBy          string
-	w               *tabwriter.Writer
-	availableFormat bool
+	cm   *clusterMetric
+	w    *tabwriter.Writer
+	opts Options
 }
 
 func (tp *tablePrinter) hasVisibleColumns() bool {
 	// Check if any data columns will be shown
-	return !tp.hideRequests || !tp.hideLimits || tp.showUtil || tp.showPodCount
+	return !tp.opts.HideRequests || !tp.opts.HideLimits || tp.opts.ShowUtil || tp.opts.ShowPodCount
 }
 
 type tableLine struct {
@@ -70,7 +62,7 @@ var headerStrings = tableLine{
 
 func (tp *tablePrinter) Print() {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
-	sortedNodeMetrics := tp.cm.getSortedNodeMetrics(tp.sortBy)
+	sortedNodeMetrics := tp.cm.getSortedNodeMetrics(tp.opts.SortBy)
 
 	tp.printLine(&headerStrings)
 
@@ -79,18 +71,18 @@ func (tp *tablePrinter) Print() {
 	}
 
 	for _, nm := range sortedNodeMetrics {
-		if tp.showPods || tp.showContainers {
+		if tp.opts.ShowPods || tp.opts.ShowContainers {
 			tp.printLine(&tableLine{})
 		}
 
 		tp.printNodeLine(nm.name, nm)
 
-		if tp.showPods || tp.showContainers {
-			podMetrics := nm.getSortedPodMetrics(tp.sortBy)
+		if tp.opts.ShowPods || tp.opts.ShowContainers {
+			podMetrics := nm.getSortedPodMetrics(tp.opts.SortBy)
 			for _, pm := range podMetrics {
 				tp.printPodLine(nm.name, pm)
-				if tp.showContainers {
-					containerMetrics := pm.getSortedContainerMetrics(tp.sortBy)
+				if tp.opts.ShowContainers {
+					containerMetrics := pm.getSortedContainerMetrics(tp.opts.SortBy)
 					for _, containerMetric := range containerMetrics {
 						tp.printContainerLine(nm.name, pm, containerMetric)
 					}
@@ -113,40 +105,40 @@ func (tp *tablePrinter) printLine(tl *tableLine) {
 func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 	lineItems := []string{tl.node}
 
-	if tp.showContainers || tp.showPods {
-		if tp.showNamespace {
+	if tp.opts.ShowContainers || tp.opts.ShowPods {
+		if tp.opts.Namespace == "" {
 			lineItems = append(lineItems, tl.namespace)
 		}
 		lineItems = append(lineItems, tl.pod)
 	}
 
-	if tp.showContainers {
+	if tp.opts.ShowContainers {
 		lineItems = append(lineItems, tl.container)
 	}
 
-	if !tp.hideRequests {
+	if !tp.opts.HideRequests {
 		lineItems = append(lineItems, tl.cpuRequests)
 	}
-	if !tp.hideLimits {
+	if !tp.opts.HideLimits {
 		lineItems = append(lineItems, tl.cpuLimits)
 	}
 
-	if tp.showUtil {
+	if tp.opts.ShowUtil {
 		lineItems = append(lineItems, tl.cpuUtil)
 	}
 
-	if !tp.hideRequests {
+	if !tp.opts.HideRequests {
 		lineItems = append(lineItems, tl.memoryRequests)
 	}
-	if !tp.hideLimits {
+	if !tp.opts.HideLimits {
 		lineItems = append(lineItems, tl.memoryLimits)
 	}
 
-	if tp.showUtil {
+	if tp.opts.ShowUtil {
 		lineItems = append(lineItems, tl.memoryUtil)
 	}
 
-	if tp.showPodCount {
+	if tp.opts.ShowPodCount {
 		lineItems = append(lineItems, tl.podCount)
 	}
 
@@ -159,12 +151,12 @@ func (tp *tablePrinter) printClusterLine() {
 		namespace:      VoidValue,
 		pod:            VoidValue,
 		container:      VoidValue,
-		cpuRequests:    tp.cm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      tp.cm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        tp.cm.cpu.utilString(tp.availableFormat),
-		memoryRequests: tp.cm.memory.requestString(tp.availableFormat),
-		memoryLimits:   tp.cm.memory.limitString(tp.availableFormat),
-		memoryUtil:     tp.cm.memory.utilString(tp.availableFormat),
+		cpuRequests:    tp.cm.cpu.requestString(tp.opts.AvailableFormat),
+		cpuLimits:      tp.cm.cpu.limitString(tp.opts.AvailableFormat),
+		cpuUtil:        tp.cm.cpu.utilString(tp.opts.AvailableFormat),
+		memoryRequests: tp.cm.memory.requestString(tp.opts.AvailableFormat),
+		memoryLimits:   tp.cm.memory.limitString(tp.opts.AvailableFormat),
+		memoryUtil:     tp.cm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       tp.cm.podCount.podCountString(),
 	})
 }
@@ -175,12 +167,12 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		namespace:      VoidValue,
 		pod:            VoidValue,
 		container:      VoidValue,
-		cpuRequests:    nm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      nm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        nm.cpu.utilString(tp.availableFormat),
-		memoryRequests: nm.memory.requestString(tp.availableFormat),
-		memoryLimits:   nm.memory.limitString(tp.availableFormat),
-		memoryUtil:     nm.memory.utilString(tp.availableFormat),
+		cpuRequests:    nm.cpu.requestString(tp.opts.AvailableFormat),
+		cpuLimits:      nm.cpu.limitString(tp.opts.AvailableFormat),
+		cpuUtil:        nm.cpu.utilString(tp.opts.AvailableFormat),
+		memoryRequests: nm.memory.requestString(tp.opts.AvailableFormat),
+		memoryLimits:   nm.memory.limitString(tp.opts.AvailableFormat),
+		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       nm.podCount.podCountString(),
 	})
 }
@@ -191,12 +183,12 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 		namespace:      pm.namespace,
 		pod:            pm.name,
 		container:      VoidValue,
-		cpuRequests:    pm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      pm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        pm.cpu.utilString(tp.availableFormat),
-		memoryRequests: pm.memory.requestString(tp.availableFormat),
-		memoryLimits:   pm.memory.limitString(tp.availableFormat),
-		memoryUtil:     pm.memory.utilString(tp.availableFormat),
+		cpuRequests:    pm.cpu.requestString(tp.opts.AvailableFormat),
+		cpuLimits:      pm.cpu.limitString(tp.opts.AvailableFormat),
+		cpuUtil:        pm.cpu.utilString(tp.opts.AvailableFormat),
+		memoryRequests: pm.memory.requestString(tp.opts.AvailableFormat),
+		memoryLimits:   pm.memory.limitString(tp.opts.AvailableFormat),
+		memoryUtil:     pm.memory.utilString(tp.opts.AvailableFormat),
 	})
 }
 
@@ -206,11 +198,11 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		namespace:      pm.namespace,
 		pod:            pm.name,
 		container:      cm.name,
-		cpuRequests:    cm.cpu.requestString(tp.availableFormat),
-		cpuLimits:      cm.cpu.limitString(tp.availableFormat),
-		cpuUtil:        cm.cpu.utilString(tp.availableFormat),
-		memoryRequests: cm.memory.requestString(tp.availableFormat),
-		memoryLimits:   cm.memory.limitString(tp.availableFormat),
-		memoryUtil:     cm.memory.utilString(tp.availableFormat),
+		cpuRequests:    cm.cpu.requestString(tp.opts.AvailableFormat),
+		cpuLimits:      cm.cpu.limitString(tp.opts.AvailableFormat),
+		cpuUtil:        cm.cpu.utilString(tp.opts.AvailableFormat),
+		memoryRequests: cm.memory.requestString(tp.opts.AvailableFormat),
+		memoryLimits:   cm.memory.limitString(tp.opts.AvailableFormat),
+		memoryUtil:     cm.memory.utilString(tp.opts.AvailableFormat),
 	})
 }
