@@ -65,15 +65,8 @@ type listClusterTotals struct {
 }
 
 type listPrinter struct {
-	cm             *clusterMetric
-	showPods       bool
-	showContainers bool
-	showUtil       bool
-	showPodCount   bool
-	showLabels     bool
-	sortBy         string
-	hideRequests   bool
-	hideLimits     bool
+	cm   *clusterMetric
+	opts Options
 }
 
 func (lp listPrinter) Print(outputType string) {
@@ -109,34 +102,34 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 		Memory: lp.buildListResourceOutput(lp.cm.memory),
 	}
 
-	if lp.showPodCount {
+	if lp.opts.ShowPodCount {
 		response.ClusterTotals.PodCount = lp.cm.podCount.podCountString()
 	}
 
-	for _, nodeMetric := range lp.cm.getSortedNodeMetrics(lp.sortBy) {
+	for _, nodeMetric := range lp.cm.getSortedNodeMetrics(lp.opts.SortBy) {
 		var node listNodeMetric
 		node.Name = nodeMetric.name
 		node.CPU = lp.buildListResourceOutput(nodeMetric.cpu)
 		node.Memory = lp.buildListResourceOutput(nodeMetric.memory)
 
-		if lp.showPodCount {
+		if lp.opts.ShowPodCount {
 			node.PodCount = nodeMetric.podCount.podCountString()
 		}
 
-		if lp.showLabels {
+		if lp.ShowLabels {
 			node.Labels = nodeMetric.labels
 		}
 
-		if lp.showPods || lp.showContainers {
-			for _, podMetric := range nodeMetric.getSortedPodMetrics(lp.sortBy) {
+		if lp.opts.ShowPods || lp.opts.ShowContainers {
+			for _, podMetric := range nodeMetric.getSortedPodMetrics(lp.opts.SortBy) {
 				var pod listPod
 				pod.Name = podMetric.name
 				pod.Namespace = podMetric.namespace
 				pod.CPU = lp.buildListResourceOutput(podMetric.cpu)
 				pod.Memory = lp.buildListResourceOutput(podMetric.memory)
 
-				if lp.showContainers {
-					for _, containerMetric := range podMetric.getSortedContainerMetrics(lp.sortBy) {
+				if lp.opts.ShowContainers {
+					for _, containerMetric := range podMetric.getSortedContainerMetrics(lp.opts.SortBy) {
 						pod.Containers = append(pod.Containers, listContainer{
 							Name:   containerMetric.name,
 							Memory: lp.buildListResourceOutput(containerMetric.memory),
@@ -159,17 +152,17 @@ func (lp *listPrinter) buildListResourceOutput(item *resourceMetric) *listResour
 
 	out := listResourceOutput{}
 
-	if !lp.hideRequests {
+	if !lp.opts.HideRequests {
 		out.Requests = valueCalculator(item.request)
 		out.RequestsPct = percentCalculator(item.request)
 	}
 
-	if !lp.hideLimits {
+	if !lp.opts.HideLimits {
 		out.Limits = valueCalculator(item.limit)
 		out.LimitsPct = percentCalculator(item.limit)
 	}
 
-	if lp.showUtil {
+	if lp.opts.ShowUtil {
 		out.Utilization = valueCalculator(item.utilization)
 		out.UtilizationPct = percentCalculator(item.utilization)
 	}
