@@ -44,57 +44,37 @@ func SupportedOutputs() []string {
 	}
 }
 
-func printList(cm *clusterMetric, showContainers, showPods, showUtil, showPodCount, showNamespace bool, hideRequests, hideLimits bool, output, sortBy string, availableFormat bool) {
+func printList(cm *clusterMetric, opts Options) {
+	output := opts.OutputFormat
 	if output == JSONOutput || output == YAMLOutput {
 		lp := &listPrinter{
-			cm:             cm,
-			showPods:       showPods,
-			showUtil:       showUtil,
-			showContainers: showContainers,
-			showPodCount:   showPodCount,
-			hideRequests:   hideRequests,
-			hideLimits:     hideLimits,
-			sortBy:         sortBy,
+			cm:   cm,
+			opts: opts,
 		}
 		lp.Print(output)
 	} else if output == TableOutput {
 		tp := &tablePrinter{
-			cm:              cm,
-			showPods:        showPods,
-			showUtil:        showUtil,
-			showPodCount:    showPodCount,
-			showContainers:  showContainers,
-			showNamespace:   showNamespace,
-			hideRequests:    hideRequests,
-			hideLimits:      hideLimits,
-			sortBy:          sortBy,
-			w:               new(tabwriter.Writer),
-			availableFormat: availableFormat,
+			cm:   cm,
+			w:    new(tabwriter.Writer),
+			opts: opts,
 		}
 		if !tp.hasVisibleColumns() {
-			fmt.Println("Error: No data columns selected for display. At least one of the following must be enabled:")
-			fmt.Println("- Resource requests (enabled by default, disabled with --hide-requests)")
-			fmt.Println("- Resource limits (enabled by default, disabled with --hide-limits)")
-			fmt.Println("- Resource utilization (enabled with --util)")
-			fmt.Println("- Pod count (enabled with --pod-count)")
+			fmt.Fprintln(os.Stderr, "Error: No data columns selected for display. At least one of the following must be enabled:")
+			fmt.Fprintln(os.Stderr, "- Resource requests (enabled by default, disabled with --hide-requests)")
+			fmt.Fprintln(os.Stderr, "- Resource limits (enabled by default, disabled with --hide-limits)")
+			fmt.Fprintln(os.Stderr, "- Resource utilization (enabled with --util)")
+			fmt.Fprintln(os.Stderr, "- Pod count (enabled with --pod-count)")
 			os.Exit(1)
 		}
 		tp.Print()
 	} else if output == CSVOutput || output == TSVOutput {
 		cp := &csvPrinter{
-			cm:             cm,
-			showPods:       showPods,
-			showUtil:       showUtil,
-			showPodCount:   showPodCount,
-			showContainers: showContainers,
-			showNamespace:  showNamespace,
-			hideRequests:   hideRequests,
-			hideLimits:     hideLimits,
-			sortBy:         sortBy,
+			cm:   cm,
+			opts: opts,
 		}
 		cp.Print(output)
 	} else {
-		fmt.Printf("Called with an unsupported output type: %s", output)
+		fmt.Fprintf(os.Stderr, "Called with an unsupported output type: %s\n", output)
 		os.Exit(1)
 	}
 }

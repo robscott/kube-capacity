@@ -22,17 +22,9 @@ import (
 )
 
 type csvPrinter struct {
-	cm             *clusterMetric
-	showPods       bool
-	showUtil       bool
-	showPodCount   bool
-	showContainers bool
-	showNamespace  bool
-	sortBy         string
-	file           io.Writer
-	separator      string
-	hideRequests   bool
-	hideLimits     bool
+	cm   *clusterMetric
+	file io.Writer
+	opts Options
 }
 
 type csvLine struct {
@@ -84,9 +76,8 @@ var csvHeaderStrings = csvLine{
 func (cp *csvPrinter) Print(outputType string) {
 
 	cp.file = os.Stdout
-	cp.separator = outputType
 
-	sortedNodeMetrics := cp.cm.getSortedNodeMetrics(cp.sortBy)
+	sortedNodeMetrics := cp.cm.getSortedNodeMetrics(cp.opts.SortBy)
 
 	cp.printLine(&csvHeaderStrings)
 
@@ -97,12 +88,12 @@ func (cp *csvPrinter) Print(outputType string) {
 	for _, nm := range sortedNodeMetrics {
 		cp.printNodeLine(nm.name, nm)
 
-		if cp.showPods || cp.showContainers {
-			podMetrics := nm.getSortedPodMetrics(cp.sortBy)
+		if cp.opts.ShowPods || cp.opts.ShowContainers {
+			podMetrics := nm.getSortedPodMetrics(cp.opts.SortBy)
 			for _, pm := range podMetrics {
 				cp.printPodLine(nm.name, pm)
-				if cp.showContainers {
-					containerMetrics := pm.getSortedContainerMetrics(cp.sortBy)
+				if cp.opts.ShowContainers {
+					containerMetrics := pm.getSortedContainerMetrics(cp.opts.SortBy)
 					for _, containerMetric := range containerMetrics {
 						cp.printContainerLine(nm.name, pm, containerMetric)
 					}
@@ -114,7 +105,7 @@ func (cp *csvPrinter) Print(outputType string) {
 
 func (cp *csvPrinter) printLine(cl *csvLine) {
 	separator := ","
-	if cp.separator == TSVOutput {
+	if cp.opts.OutputFormat == TSVOutput {
 		separator = "\t"
 	}
 
@@ -126,48 +117,48 @@ func (cp *csvPrinter) printLine(cl *csvLine) {
 func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 	lineItems := []string{CSVStringTerminator + cl.node + CSVStringTerminator}
 
-	if cp.showContainers || cp.showPods {
-		if cp.showNamespace {
+	if cp.opts.ShowContainers || cp.opts.ShowPods {
+		if cp.opts.Namespace == "" {
 			lineItems = append(lineItems, CSVStringTerminator+cl.namespace+CSVStringTerminator)
 		}
 		lineItems = append(lineItems, CSVStringTerminator+cl.pod+CSVStringTerminator)
 	}
 
-	if cp.showContainers {
+	if cp.opts.ShowContainers {
 		lineItems = append(lineItems, CSVStringTerminator+cl.container+CSVStringTerminator)
 	}
 
 	lineItems = append(lineItems, cl.cpuCapacity)
-	if !cp.hideRequests {
+	if !cp.opts.HideRequests {
 		lineItems = append(lineItems, cl.cpuRequests)
 		lineItems = append(lineItems, cl.cpuRequestsPercentage)
 	}
-	if !cp.hideLimits {
+	if !cp.opts.HideLimits {
 		lineItems = append(lineItems, cl.cpuLimits)
 		lineItems = append(lineItems, cl.cpuLimitsPercentage)
 	}
 
-	if cp.showUtil {
+	if cp.opts.ShowUtil {
 		lineItems = append(lineItems, cl.cpuUtil)
 		lineItems = append(lineItems, cl.cpuUtilPercentage)
 	}
 
 	lineItems = append(lineItems, cl.memoryCapacity)
-	if !cp.hideRequests {
+	if !cp.opts.HideRequests {
 		lineItems = append(lineItems, cl.memoryRequests)
 		lineItems = append(lineItems, cl.memoryRequestsPercentage)
 	}
-	if !cp.hideLimits {
+	if !cp.opts.HideLimits {
 		lineItems = append(lineItems, cl.memoryLimits)
 		lineItems = append(lineItems, cl.memoryLimitsPercentage)
 	}
 
-	if cp.showUtil {
+	if cp.opts.ShowUtil {
 		lineItems = append(lineItems, cl.memoryUtil)
 		lineItems = append(lineItems, cl.memoryUtilPercentage)
 	}
 
-	if cp.showPodCount {
+	if cp.opts.ShowPodCount {
 		lineItems = append(lineItems, cl.podCountCurrent)
 		lineItems = append(lineItems, cl.podCountAllocatable)
 	}
