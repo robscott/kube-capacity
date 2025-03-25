@@ -1,6 +1,6 @@
 module github.com/robscott/kube-capacity
 
-go 1.23 // keep in sync with .github/workflows/test.yaml and .github/workflows/golangci-lint.yaml
+go 1.23.0 // keep in sync with .github/workflows/test.yaml and .github/workflows/golangci-lint.yaml
 
 require (
 	github.com/spf13/cobra v1.8.1
