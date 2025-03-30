@@ -23,6 +23,7 @@ import (
 
 type listNodeMetric struct {
 	Name     string              `json:"name"`
+	Labels   map[string]string   `json:"labels,omitempty"`
 	CPU      *listResourceOutput `json:"cpu,omitempty"`
 	Memory   *listResourceOutput `json:"memory,omitempty"`
 	Pods     []*listPod          `json:"pods,omitempty"`
@@ -113,6 +114,10 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 
 		if lp.opts.ShowPodCount {
 			node.PodCount = nodeMetric.podCount.podCountString()
+		}
+
+		if lp.opts.ShowLabels {
+			node.Labels = nodeMetric.labels
 		}
 
 		if lp.opts.ShowPods || lp.opts.ShowContainers {

@@ -199,6 +199,7 @@ kube-capacity --pods --containers --util --output tsv
                                     (default "name")
   -u, --util                      includes resource utilization in output
       --pod-count                 includes pod counts for each of the nodes and the whole cluster
+      --show-labels               includes node labels in output
 ```
 
 ## Prerequisites

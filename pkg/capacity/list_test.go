@@ -77,6 +77,7 @@ func TestBuildListClusterMetricsAllOptions(t *testing.T) {
 			ShowPods:       true,
 			ShowContainers: true,
 			ShowPodCount:   true,
+			ShowLabels:     true,
 		},
 	}
 
@@ -105,6 +106,7 @@ func TestBuildListClusterMetricsAllOptions(t *testing.T) {
 	assert.EqualValues(t, &listNodeMetric{
 		Name:     "example-node-1",
 		PodCount: "1/110",
+		Labels:   map[string]string{"example.io/os": "example-os-1", "zone": "example-zone-1"},
 		CPU: &listResourceOutput{
 			Requests:       "650m",
 			RequestsPct:    "65%",
@@ -256,6 +258,10 @@ func getTestClusterMetric() clusterMetric {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "example-node-1",
+						Labels: map[string]string{
+							"example.io/os": "example-os-1",
+							"zone":          "example-zone-1",
+						},
 					},
 					Status: corev1.NodeStatus{
 						Allocatable: corev1.ResourceList{
@@ -271,6 +277,10 @@ func getTestClusterMetric() clusterMetric {
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "example-node-1",
+						Labels: map[string]string{
+							"example.io/os": "example-os-1",
+							"zone":          "example-zone-1",
+						},
 					},
 					Usage: corev1.ResourceList{
 						"cpu":    resource.MustParse("63m"),
