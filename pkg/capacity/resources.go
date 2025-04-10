@@ -423,7 +423,7 @@ func resourceString(resourceType string, actual, allocatable resource.Quantity, 
 		actualStr = fmt.Sprintf("%d", actual.Value())
 	}
 
-	return fmt.Sprintf("%s (%d%%%%)", actualStr, int64(utilPercent))
+	return fmt.Sprintf("%s (%d%%)", actualStr, int64(utilPercent))
 }
 
 func formatToMegiBytes(actual resource.Quantity) int64 {
