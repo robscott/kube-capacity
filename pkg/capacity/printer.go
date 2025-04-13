@@ -45,14 +45,14 @@ func SupportedOutputs() []string {
 }
 
 func printList(cm *clusterMetric, opts Options) {
-	output := opts.OutputFormat
-	if output == JSONOutput || output == YAMLOutput {
+	switch opts.OutputFormat {
+	case JSONOutput, YAMLOutput:
 		lp := &listPrinter{
 			cm:   cm,
 			opts: opts,
 		}
-		lp.Print(output)
-	} else if output == TableOutput {
+		lp.Print()
+	case TableOutput:
 		tp := &tablePrinter{
 			cm:   cm,
 			w:    new(tabwriter.Writer),
@@ -67,14 +67,14 @@ func printList(cm *clusterMetric, opts Options) {
 			os.Exit(1)
 		}
 		tp.Print()
-	} else if output == CSVOutput || output == TSVOutput {
+	case CSVOutput, TSVOutput:
 		cp := &csvPrinter{
 			cm:   cm,
 			opts: opts,
 		}
-		cp.Print(output)
-	} else {
-		fmt.Fprintf(os.Stderr, "Called with an unsupported output type: %s\n", output)
+		cp.Print()
+	default:
+		fmt.Fprintf(os.Stderr, "Called with an unsupported output type: %s\n", opts.OutputFormat)
 		os.Exit(1)
 	}
 }
