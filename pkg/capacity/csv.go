@@ -17,8 +17,10 @@ package capacity
 import (
 	"fmt"
 	"io"
+	"k8s.io/apimachinery/pkg/util/duration"
 	"os"
 	"strings"
+	"time"
 )
 
 type csvPrinter struct {
@@ -29,8 +31,10 @@ type csvPrinter struct {
 
 type csvLine struct {
 	node                     string
+	nodeAge                  string
 	namespace                string
 	pod                      string
+	podAge                   string
 	container                string
 	cpuCapacity              string
 	cpuRequests              string
@@ -52,8 +56,10 @@ type csvLine struct {
 
 var csvHeaderStrings = csvLine{
 	node:                     "NODE",
+	nodeAge:                  "NODE AGE",
 	namespace:                "NAMESPACE",
 	pod:                      "POD",
+	podAge:                   "POD AGE",
 	container:                "CONTAINER",
 	cpuCapacity:              "CPU CAPACITY (milli)",
 	cpuRequests:              "CPU REQUESTS",
@@ -86,16 +92,16 @@ func (cp *csvPrinter) Print(outputType string) {
 	}
 
 	for _, nm := range sortedNodeMetrics {
-		cp.printNodeLine(nm.name, nm)
+		cp.printNodeLine(nm)
 
 		if cp.opts.ShowPods || cp.opts.ShowContainers {
 			podMetrics := nm.getSortedPodMetrics(cp.opts.SortBy)
 			for _, pm := range podMetrics {
-				cp.printPodLine(nm.name, pm)
+				cp.printPodLine(nm, pm)
 				if cp.opts.ShowContainers {
 					containerMetrics := pm.getSortedContainerMetrics(cp.opts.SortBy)
 					for _, containerMetric := range containerMetrics {
-						cp.printContainerLine(nm.name, pm, containerMetric)
+						cp.printContainerLine(nm, pm, containerMetric)
 					}
 				}
 			}
@@ -169,8 +175,10 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 func (cp *csvPrinter) printClusterLine() {
 	cp.printLine(&csvLine{
 		node:                     VoidValue,
+		nodeAge:                  VoidValue,
 		namespace:                VoidValue,
 		pod:                      VoidValue,
+		podAge:                   VoidValue,
 		container:                VoidValue,
 		cpuCapacity:              cp.cm.cpu.capacityString(),
 		cpuRequests:              cp.cm.cpu.requestActualString(),
@@ -191,11 +199,13 @@ func (cp *csvPrinter) printClusterLine() {
 	})
 }
 
-func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
+func (cp *csvPrinter) printNodeLine(nm *nodeMetric) {
 	cp.printLine(&csvLine{
-		node:                     nodeName,
+		node:                     nm.name,
+		nodeAge:                  duration.ShortHumanDuration(time.Since(nm.creationTimeStamp.Time)),
 		namespace:                VoidValue,
 		pod:                      VoidValue,
+		podAge:                   VoidValue,
 		container:                VoidValue,
 		cpuCapacity:              nm.cpu.capacityString(),
 		cpuRequests:              nm.cpu.requestActualString(),
@@ -216,11 +226,13 @@ func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	})
 }
 
-func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
+func (cp *csvPrinter) printPodLine(nm *nodeMetric, pm *podMetric) {
 	cp.printLine(&csvLine{
-		node:                     nodeName,
+		node:                     nm.name,
+		nodeAge:                  duration.ShortHumanDuration(time.Since(nm.creationTimeStamp.Time)),
 		namespace:                pm.namespace,
 		pod:                      pm.name,
+		podAge:                   duration.ShortHumanDuration(time.Since(pm.creationTimeStamp.Time)),
 		container:                VoidValue,
 		cpuCapacity:              pm.cpu.capacityString(),
 		cpuRequests:              pm.cpu.requestActualString(),
@@ -239,11 +251,13 @@ func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
 	})
 }
 
-func (cp *csvPrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
+func (cp *csvPrinter) printContainerLine(nm *nodeMetric, pm *podMetric, cm *containerMetric) {
 	cp.printLine(&csvLine{
-		node:                     nodeName,
+		node:                     nm.name,
+		nodeAge:                  duration.ShortHumanDuration(time.Since(nm.creationTimeStamp.Time)),
 		namespace:                pm.namespace,
 		pod:                      pm.name,
+		podAge:                   duration.ShortHumanDuration(time.Since(pm.creationTimeStamp.Time)),
 		container:                cm.name,
 		cpuCapacity:              cm.cpu.capacityString(),
 		cpuRequests:              cm.cpu.requestActualString(),

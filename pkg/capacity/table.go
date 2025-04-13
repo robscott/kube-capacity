@@ -16,9 +16,11 @@ package capacity
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/duration"
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 )
 
 type tablePrinter struct {
@@ -44,6 +46,7 @@ type tableLine struct {
 	memoryLimits   string
 	memoryUtil     string
 	podCount       string
+	age            string
 }
 
 var headerStrings = tableLine{
@@ -58,6 +61,7 @@ var headerStrings = tableLine{
 	memoryLimits:   "MEMORY LIMITS",
 	memoryUtil:     "MEMORY UTIL",
 	podCount:       "POD COUNT",
+	age:            "AGE",
 }
 
 func (tp *tablePrinter) Print() {
@@ -75,7 +79,7 @@ func (tp *tablePrinter) Print() {
 			tp.printLine(&tableLine{})
 		}
 
-		tp.printNodeLine(nm.name, nm)
+		tp.printNodeLine(nm)
 
 		if tp.opts.ShowPods || tp.opts.ShowContainers {
 			podMetrics := nm.getSortedPodMetrics(tp.opts.SortBy)
@@ -142,6 +146,8 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.podCount)
 	}
 
+	lineItems = append(lineItems, tl.age)
+
 	return lineItems
 }
 
@@ -161,9 +167,9 @@ func (tp *tablePrinter) printClusterLine() {
 	})
 }
 
-func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
+func (tp *tablePrinter) printNodeLine(nm *nodeMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
+		node:           nm.name,
 		namespace:      VoidValue,
 		pod:            VoidValue,
 		container:      VoidValue,
@@ -174,6 +180,7 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		memoryLimits:   nm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       nm.podCount.podCountString(),
+		age:            duration.ShortHumanDuration(time.Since(nm.creationTimeStamp.Time)),
 	})
 }
 
@@ -189,6 +196,7 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 		memoryRequests: pm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   pm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     pm.memory.utilString(tp.opts.AvailableFormat),
+		age:            duration.ShortHumanDuration(time.Since(pm.creationTimeStamp.Time)),
 	})
 }
 
@@ -204,5 +212,6 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		memoryRequests: cm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   cm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     cm.memory.utilString(tp.opts.AvailableFormat),
+		age:            VoidValue,
 	})
 }
