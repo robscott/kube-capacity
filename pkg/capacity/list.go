@@ -63,12 +63,13 @@ type listClusterTotals struct {
 	PodCount string              `json:"podCount,omitempty"`
 }
 
+// prints the cluster metrics as a list of yaml or json
 type listPrinter struct {
 	cm   *clusterMetric
 	opts Options
 }
 
-func (lp listPrinter) Print(outputType string) {
+func (lp listPrinter) Print() {
 	listOutput := lp.buildListClusterMetrics()
 
 	jsonRaw, err := json.MarshalIndent(listOutput, "", "  ")
@@ -76,9 +77,10 @@ func (lp listPrinter) Print(outputType string) {
 		fmt.Println("Error Marshalling JSON")
 		fmt.Println(err)
 	} else {
-		if outputType == JSONOutput {
+		switch lp.opts.OutputFormat {
+		case JSONOutput:
 			fmt.Printf("%s", jsonRaw)
-		} else {
+		case YAMLOutput:
 			// This is a strange approach, but the k8s YAML package
 			// already marshalls to JSON before converting to YAML,
 			// this just allows us to follow the same code path.
@@ -89,6 +91,8 @@ func (lp listPrinter) Print(outputType string) {
 			} else {
 				fmt.Printf("%s", yamlRaw)
 			}
+		default:
+			fmt.Printf("Error: Unsupported output format %s", lp.opts.OutputFormat)
 		}
 	}
 }

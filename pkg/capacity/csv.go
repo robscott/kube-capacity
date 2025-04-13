@@ -21,6 +21,7 @@ import (
 	"strings"
 )
 
+// prints the cluster metrics as csv/tsv lines
 type csvPrinter struct {
 	cm   *clusterMetric
 	file io.Writer
@@ -73,29 +74,28 @@ var csvHeaderStrings = csvLine{
 	podCountAllocatable:      "POD COUNT ALLOCATABLE",
 }
 
-func (cp *csvPrinter) Print(outputType string) {
-
+func (cp *csvPrinter) Print() {
 	cp.file = os.Stdout
 
-	sortedNodeMetrics := cp.cm.getSortedNodeMetrics(cp.opts.SortBy)
+	nms := cp.cm.getSortedNodeMetrics(cp.opts.SortBy)
 
 	cp.printLine(&csvHeaderStrings)
 
-	if len(sortedNodeMetrics) > 1 {
+	if len(nms) > 1 {
 		cp.printClusterLine()
 	}
 
-	for _, nm := range sortedNodeMetrics {
-		cp.printNodeLine(nm.name, nm)
+	for _, nm := range nms {
+		cp.printNodeLine(nm)
 
 		if cp.opts.ShowPods || cp.opts.ShowContainers {
-			podMetrics := nm.getSortedPodMetrics(cp.opts.SortBy)
-			for _, pm := range podMetrics {
-				cp.printPodLine(nm.name, pm)
+			pms := nm.getSortedPodMetrics(cp.opts.SortBy)
+			for _, pm := range pms {
+				cp.printPodLine(nm, pm)
 				if cp.opts.ShowContainers {
-					containerMetrics := pm.getSortedContainerMetrics(cp.opts.SortBy)
-					for _, containerMetric := range containerMetrics {
-						cp.printContainerLine(nm.name, pm, containerMetric)
+					cms := pm.getSortedContainerMetrics(cp.opts.SortBy)
+					for _, containerMetric := range cms {
+						cp.printContainerLine(nm, pm, containerMetric)
 					}
 				}
 			}
@@ -104,9 +104,14 @@ func (cp *csvPrinter) Print(outputType string) {
 }
 
 func (cp *csvPrinter) printLine(cl *csvLine) {
-	separator := ","
-	if cp.opts.OutputFormat == TSVOutput {
+	var separator string
+	switch cp.opts.OutputFormat {
+	case CSVOutput:
+		separator = ","
+	case TSVOutput:
 		separator = "\t"
+	default:
+		panic(fmt.Sprintf("Invalid output format: %s", cp.opts.OutputFormat))
 	}
 
 	lineItems := cp.getLineItems(cl)
@@ -129,10 +134,12 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 	}
 
 	lineItems = append(lineItems, cl.cpuCapacity)
+
 	if !cp.opts.HideRequests {
 		lineItems = append(lineItems, cl.cpuRequests)
 		lineItems = append(lineItems, cl.cpuRequestsPercentage)
 	}
+
 	if !cp.opts.HideLimits {
 		lineItems = append(lineItems, cl.cpuLimits)
 		lineItems = append(lineItems, cl.cpuLimitsPercentage)
@@ -144,10 +151,12 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 	}
 
 	lineItems = append(lineItems, cl.memoryCapacity)
+
 	if !cp.opts.HideRequests {
 		lineItems = append(lineItems, cl.memoryRequests)
 		lineItems = append(lineItems, cl.memoryRequestsPercentage)
 	}
+
 	if !cp.opts.HideLimits {
 		lineItems = append(lineItems, cl.memoryLimits)
 		lineItems = append(lineItems, cl.memoryLimitsPercentage)
@@ -191,9 +200,9 @@ func (cp *csvPrinter) printClusterLine() {
 	})
 }
 
-func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
+func (cp *csvPrinter) printNodeLine(nm *nodeMetric) {
 	cp.printLine(&csvLine{
-		node:                     nodeName,
+		node:                     nm.name,
 		namespace:                VoidValue,
 		pod:                      VoidValue,
 		container:                VoidValue,
@@ -216,9 +225,9 @@ func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	})
 }
 
-func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
+func (cp *csvPrinter) printPodLine(nm *nodeMetric, pm *podMetric) {
 	cp.printLine(&csvLine{
-		node:                     nodeName,
+		node:                     nm.name,
 		namespace:                pm.namespace,
 		pod:                      pm.name,
 		container:                VoidValue,
@@ -239,9 +248,9 @@ func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
 	})
 }
 
-func (cp *csvPrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
+func (cp *csvPrinter) printContainerLine(nm *nodeMetric, pm *podMetric, cm *containerMetric) {
 	cp.printLine(&csvLine{
-		node:                     nodeName,
+		node:                     nm.name,
 		namespace:                pm.namespace,
 		pod:                      pm.name,
 		container:                cm.name,
