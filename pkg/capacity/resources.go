@@ -153,12 +153,12 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 
 	for _, node := range nodeList.Items {
 		if nm, ok := cm.nodeMetrics[node.Name]; ok {
-			cm.addNodeMetric(nm)
 			// When namespace filtering is configured, we want to sum pod
 			// utilization instead of relying on node util.
 			if nmList == nil {
 				nm.addPodUtilization()
 			}
+			cm.addNodeMetric(nm)
 		}
 	}
 
