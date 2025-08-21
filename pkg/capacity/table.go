@@ -21,6 +21,8 @@ import (
 	"text/tabwriter"
 )
 
+// prints the nodes/pods/containers as a tab separated table just like kubectl does without `-o`
+// produces extra lines when pod and container metrics were requested after each node
 type tablePrinter struct {
 	cm   *clusterMetric
 	w    *tabwriter.Writer
@@ -64,29 +66,31 @@ var headerStrings = tableLine{
 
 func (tp *tablePrinter) Print() {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
-	sortedNodeMetrics := tp.cm.getSortedNodeMetrics(tp.opts.SortBy)
+	nodeMetrics := tp.cm.getSortedNodeMetrics(tp.opts.SortBy)
 
 	tp.printLine(&headerStrings)
 
-	if len(sortedNodeMetrics) > 1 {
+	if len(nodeMetrics) > 1 {
 		tp.printClusterLine()
 	}
 
-	for _, nm := range sortedNodeMetrics {
-		if tp.opts.ShowPods || tp.opts.ShowContainers {
+	showDetails := tp.opts.ShowPods || tp.opts.ShowContainers
+	for _, nm := range nodeMetrics {
+		if showDetails {
 			tp.printLine(&tableLine{})
 		}
 
-		tp.printNodeLine(nm.name, nm)
+		tp.printNodeLine(nm)
 
-		if tp.opts.ShowPods || tp.opts.ShowContainers {
+		if showDetails {
 			podMetrics := nm.getSortedPodMetrics(tp.opts.SortBy)
 			for _, pm := range podMetrics {
-				tp.printPodLine(nm.name, pm)
+				tp.printPodLine(nm, pm)
+
 				if tp.opts.ShowContainers {
 					containerMetrics := pm.getSortedContainerMetrics(tp.opts.SortBy)
-					for _, containerMetric := range containerMetrics {
-						tp.printContainerLine(nm.name, pm, containerMetric)
+					for _, cm := range containerMetrics {
+						tp.printContainerLine(nm, pm, cm)
 					}
 				}
 			}
@@ -99,6 +103,10 @@ func (tp *tablePrinter) Print() {
 	}
 }
 
+// print a line by tab joining all values, adding an extra space so values do not stick to each other
+//
+// TODO: generate all lines first and then right-justify them to the longest value in each column
+// just like kubectl does it
 func (tp *tablePrinter) printLine(tl *tableLine) {
 	lineItems := tp.getLineItems(tl)
 	_, _ = fmt.Fprintln(tp.w, strings.Join(lineItems[:], "\t "))
@@ -108,7 +116,7 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 	lineItems := []string{tl.node}
 
 	if tp.opts.ShowContainers || tp.opts.ShowPods {
-		if tp.opts.Namespace == "" {
+		if tp.opts.Namespace == "" { // when showing just 1 namespace we don't need to show it
 			lineItems = append(lineItems, tl.namespace)
 		}
 		lineItems = append(lineItems, tl.pod)
@@ -121,6 +129,7 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 	if !tp.opts.HideRequests {
 		lineItems = append(lineItems, tl.cpuRequests)
 	}
+
 	if !tp.opts.HideLimits {
 		lineItems = append(lineItems, tl.cpuLimits)
 	}
@@ -132,6 +141,7 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 	if !tp.opts.HideRequests {
 		lineItems = append(lineItems, tl.memoryRequests)
 	}
+
 	if !tp.opts.HideLimits {
 		lineItems = append(lineItems, tl.memoryLimits)
 	}
@@ -168,9 +178,9 @@ func (tp *tablePrinter) printClusterLine() {
 	})
 }
 
-func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
+func (tp *tablePrinter) printNodeLine(nm *nodeMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
+		node:           nm.name,
 		namespace:      VoidValue,
 		pod:            VoidValue,
 		container:      VoidValue,
@@ -185,9 +195,9 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 	})
 }
 
-func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
+func (tp *tablePrinter) printPodLine(nm *nodeMetric, pm *podMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
+		node:           nm.name,
 		namespace:      pm.namespace,
 		pod:            pm.name,
 		container:      VoidValue,
@@ -200,9 +210,9 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 	})
 }
 
-func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
+func (tp *tablePrinter) printContainerLine(nm *nodeMetric, pm *podMetric, cm *containerMetric) {
 	tp.printLine(&tableLine{
-		node:           nodeName,
+		node:           nm.name,
 		namespace:      pm.namespace,
 		pod:            pm.name,
 		container:      cm.name,
