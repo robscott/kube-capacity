@@ -45,9 +45,10 @@ type tableLine struct {
 	memoryUtil     string
 	podCount       string
 	labels         string
+	labelColumns   []string
 }
 
-var headerStrings = tableLine{
+var staticHeaderStrings = tableLine{
 	node:           "NODE",
 	namespace:      "NAMESPACE",
 	pod:            "POD",
@@ -60,16 +61,30 @@ var headerStrings = tableLine{
 	memoryUtil:     "MEMORY UTIL",
 	podCount:       "POD COUNT",
 	labels:         "LABELS",
+	labelColumns:   []string{},
+}
+
+func getHeaderStrings(opts Options) tableLine {
+	h := staticHeaderStrings
+
+	if opts.LabelColumns != "" {
+		h.labelColumns = nodeLabelHeaders(opts.LabelColumns)
+	}
+	return h
 }
 
 func (tp *tablePrinter) Print() {
 	tp.w.Init(os.Stdout, 0, 8, 2, ' ', 0)
 	sortedNodeMetrics := tp.cm.getSortedNodeMetrics(tp.opts.SortBy)
 
-	tp.printLine(&headerStrings)
+	hs := getHeaderStrings(tp.opts)
+	tp.printLine(&hs)
+
+	// number of custom label columns to print
+	labelColumnsCnt := len(hs.labelColumns)
 
 	if len(sortedNodeMetrics) > 1 {
-		tp.printClusterLine()
+		tp.printClusterLine(labelColumnsCnt)
 	}
 
 	for _, nm := range sortedNodeMetrics {
@@ -82,11 +97,11 @@ func (tp *tablePrinter) Print() {
 		if tp.opts.ShowPods || tp.opts.ShowContainers {
 			podMetrics := nm.getSortedPodMetrics(tp.opts.SortBy)
 			for _, pm := range podMetrics {
-				tp.printPodLine(nm.name, pm)
+				tp.printPodLine(nm.name, pm, labelColumnsCnt)
 				if tp.opts.ShowContainers {
 					containerMetrics := pm.getSortedContainerMetrics(tp.opts.SortBy)
 					for _, containerMetric := range containerMetrics {
-						tp.printContainerLine(nm.name, pm, containerMetric)
+						tp.printContainerLine(nm.name, pm, containerMetric, labelColumnsCnt)
 					}
 				}
 			}
@@ -148,10 +163,14 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.labels)
 	}
 
+	if tp.opts.LabelColumns != "" {
+		lineItems = append(lineItems, tl.labelColumns...)
+	}
+
 	return lineItems
 }
 
-func (tp *tablePrinter) printClusterLine() {
+func (tp *tablePrinter) printClusterLine(labelColumnsCnt int) {
 	tp.printLine(&tableLine{
 		node:           VoidValue,
 		namespace:      VoidValue,
@@ -165,6 +184,7 @@ func (tp *tablePrinter) printClusterLine() {
 		memoryUtil:     tp.cm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       tp.cm.podCount.podCountString(),
 		labels:         VoidValue,
+		labelColumns:   make([]string, labelColumnsCnt),
 	})
 }
 
@@ -182,10 +202,11 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat),
 		podCount:       nm.podCount.podCountString(),
 		labels:         nodeLabelsString(nm.labels),
+		labelColumns:   nodeLabelValues(nm.labels, tp.opts.LabelColumns),
 	})
 }
 
-func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
+func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric, labelColumnsCnt int) {
 	tp.printLine(&tableLine{
 		node:           nodeName,
 		namespace:      pm.namespace,
@@ -197,10 +218,11 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 		memoryRequests: pm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   pm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     pm.memory.utilString(tp.opts.AvailableFormat),
+		labelColumns:   make([]string, labelColumnsCnt),
 	})
 }
 
-func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
+func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric, labelColumnsCnt int) {
 	tp.printLine(&tableLine{
 		node:           nodeName,
 		namespace:      pm.namespace,
@@ -212,5 +234,6 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		memoryRequests: cm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   cm.memory.limitString(tp.opts.AvailableFormat),
 		memoryUtil:     cm.memory.utilString(tp.opts.AvailableFormat),
+		labelColumns:   make([]string, labelColumnsCnt),
 	})
 }

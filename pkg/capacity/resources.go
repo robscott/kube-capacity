@@ -17,6 +17,7 @@ package capacity
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -407,6 +408,43 @@ func nodeLabelsString(labels map[string]string) string {
 		labelStr += fmt.Sprintf("%s=%s,", key, value)
 	}
 	return labelStr[:len(labelStr)-1]
+}
+
+func formatNodeLabelHeader(label string) string {
+	parts := strings.Split(label, "/")
+	return strings.ToUpper(parts[len(parts)-1])
+}
+
+// nodeLabelHeaders returns the formatted node label column headers
+func nodeLabelHeaders(optsLabel string) []string {
+	if optsLabel == "" {
+		return []string{}
+	}
+
+	labels := strings.Split(optsLabel, ",")
+
+	for i := range labels {
+		labels[i] = formatNodeLabelHeader(labels[i])
+	}
+	return labels
+}
+
+func nodeLabelValues(labels map[string]string, optsLabel string) []string {
+	if optsLabel == "" {
+		return []string{}
+	}
+
+	columns := strings.Split(optsLabel, ",")
+	values := make([]string, len(columns))
+
+	for i, label := range columns {
+		if val, ok := labels[label]; ok {
+			values[i] = val
+		} else {
+			values[i] = ""
+		}
+	}
+	return values
 }
 
 func resourceString(resourceType string, actual, allocatable resource.Quantity, availableFormat bool) string {

@@ -87,6 +87,8 @@ func init() {
 		"hide-limits", "", false, "hide limits from output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.ShowLabels,
 		"show-labels", "", false, "includes node labels in output")
+	rootCmd.PersistentFlags().StringVarP(&opts.LabelColumns,
+		"label-columns", "", "", "comma separated list of node labels to include in output as columns")
 }
 
 // Execute is the primary entrypoint for this CLI

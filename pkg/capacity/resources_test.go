@@ -285,3 +285,30 @@ func listPods(p *corev1.PodList) []string {
 
 	return pods
 }
+
+func TestFormatNodeLabelHeader(t *testing.T) {
+	assert.Equal(t, "ZONE", formatNodeLabelHeader("zone"))
+	assert.Equal(t, "OS", formatNodeLabelHeader("example.io/os"))
+	assert.Equal(t, "", formatNodeLabelHeader(""))
+	assert.Equal(t, "", formatNodeLabelHeader("example.io/"))
+}
+
+func TestNodeLabelHeaders(t *testing.T) {
+	assert.Equal(t, []string{"ZONE"}, nodeLabelHeaders("zone"))
+	assert.Equal(t, []string{"ZONE", "ENVIRONMENT"}, nodeLabelHeaders("zone,environment"))
+	assert.Equal(t, []string{}, nodeLabelHeaders(""))
+}
+
+func TestNodeLabelValues(t *testing.T) {
+	labels := map[string]string{
+		"example.io/os": "example-os-1",
+		"zone":          "example-zone-1",
+	}
+
+	assert.Equal(t, []string{"example-zone-1"}, nodeLabelValues(labels, "zone"))
+	assert.Equal(t, []string{"example-os-1"}, nodeLabelValues(labels, "example.io/os"))
+	assert.Equal(t, []string{"example-zone-1", "example-os-1"}, nodeLabelValues(labels, "zone,example.io/os"))
+	assert.Equal(t, []string{"example-zone-1", ""}, nodeLabelValues(labels, "zone,environment"))
+	assert.Equal(t, []string{""}, nodeLabelValues(labels, "example.io/arch"))
+	assert.Equal(t, []string{}, nodeLabelValues(labels, ""))
+}

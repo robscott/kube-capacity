@@ -116,7 +116,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 			node.PodCount = nodeMetric.podCount.podCountString()
 		}
 
-		if lp.opts.ShowLabels {
+		if lp.opts.ShowLabels || lp.opts.LabelColumns != "" {
 			node.Labels = nodeMetric.labels
 		}
 

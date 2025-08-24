@@ -49,9 +49,10 @@ type csvLine struct {
 	podCountCurrent          string
 	podCountAllocatable      string
 	labels                   string
+	labelColumns             []string
 }
 
-var csvHeaderStrings = csvLine{
+var staticCsvHeaderStrings = csvLine{
 	node:                     "NODE",
 	namespace:                "NAMESPACE",
 	pod:                      "POD",
@@ -73,6 +74,16 @@ var csvHeaderStrings = csvLine{
 	podCountCurrent:          "POD COUNT CURRENT",
 	podCountAllocatable:      "POD COUNT ALLOCATABLE",
 	labels:                   "LABELS",
+	labelColumns:             []string{},
+}
+
+func getCsvHeaderStrings(opts Options) csvLine {
+	h := staticCsvHeaderStrings
+
+	if opts.LabelColumns != "" {
+		h.labelColumns = nodeLabelHeaders(opts.LabelColumns)
+	}
+	return h
 }
 
 func (cp *csvPrinter) Print(outputType string) {
@@ -81,10 +92,14 @@ func (cp *csvPrinter) Print(outputType string) {
 
 	sortedNodeMetrics := cp.cm.getSortedNodeMetrics(cp.opts.SortBy)
 
-	cp.printLine(&csvHeaderStrings)
+	hs := getCsvHeaderStrings(cp.opts)
+	cp.printLine(&hs)
+
+	// number of custom label columns to print
+	labelColumnsCnt := len(hs.labelColumns)
 
 	if len(sortedNodeMetrics) > 1 {
-		cp.printClusterLine()
+		cp.printClusterLine(labelColumnsCnt)
 	}
 
 	for _, nm := range sortedNodeMetrics {
@@ -93,11 +108,11 @@ func (cp *csvPrinter) Print(outputType string) {
 		if cp.opts.ShowPods || cp.opts.ShowContainers {
 			podMetrics := nm.getSortedPodMetrics(cp.opts.SortBy)
 			for _, pm := range podMetrics {
-				cp.printPodLine(nm.name, pm)
+				cp.printPodLine(nm.name, pm, labelColumnsCnt)
 				if cp.opts.ShowContainers {
 					containerMetrics := pm.getSortedContainerMetrics(cp.opts.SortBy)
 					for _, containerMetric := range containerMetrics {
-						cp.printContainerLine(nm.name, pm, containerMetric)
+						cp.printContainerLine(nm.name, pm, containerMetric, labelColumnsCnt)
 					}
 				}
 			}
@@ -169,10 +184,14 @@ func (cp *csvPrinter) getLineItems(cl *csvLine) []string {
 		lineItems = append(lineItems, cl.labels)
 	}
 
+	if cp.opts.LabelColumns != "" {
+		lineItems = append(lineItems, cl.labelColumns...)
+	}
+
 	return lineItems
 }
 
-func (cp *csvPrinter) printClusterLine() {
+func (cp *csvPrinter) printClusterLine(labelColumnsCnt int) {
 	cp.printLine(&csvLine{
 		node:                     VoidValue,
 		namespace:                VoidValue,
@@ -195,6 +214,7 @@ func (cp *csvPrinter) printClusterLine() {
 		podCountCurrent:          cp.cm.podCount.podCountCurrentString(),
 		podCountAllocatable:      cp.cm.podCount.podCountAllocatableString(),
 		labels:                   VoidValue,
+		labelColumns:             make([]string, labelColumnsCnt),
 	})
 }
 
@@ -221,10 +241,11 @@ func (cp *csvPrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		podCountCurrent:          nm.podCount.podCountCurrentString(),
 		podCountAllocatable:      nm.podCount.podCountAllocatableString(),
 		labels:                   fmt.Sprintf("%q", nodeLabelsString(nm.labels)), // quote the labels to avoid CSV parsing issues
+		labelColumns:             nodeLabelValues(nm.labels, cp.opts.LabelColumns),
 	})
 }
 
-func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
+func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric, labelColumnsCnt int) {
 	cp.printLine(&csvLine{
 		node:                     nodeName,
 		namespace:                pm.namespace,
@@ -244,10 +265,11 @@ func (cp *csvPrinter) printPodLine(nodeName string, pm *podMetric) {
 		memoryLimitsPercentage:   pm.memory.limitPercentageString(),
 		memoryUtil:               pm.memory.utilActualString(),
 		memoryUtilPercentage:     pm.memory.utilPercentageString(),
+		labelColumns:             make([]string, labelColumnsCnt),
 	})
 }
 
-func (cp *csvPrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric) {
+func (cp *csvPrinter) printContainerLine(nodeName string, pm *podMetric, cm *containerMetric, labelColumnsCnt int) {
 	cp.printLine(&csvLine{
 		node:                     nodeName,
 		namespace:                pm.namespace,
@@ -267,5 +289,6 @@ func (cp *csvPrinter) printContainerLine(nodeName string, pm *podMetric, cm *con
 		memoryLimitsPercentage:   cm.memory.limitPercentageString(),
 		memoryUtil:               cm.memory.utilActualString(),
 		memoryUtilPercentage:     cm.memory.utilPercentageString(),
+		labelColumns:             make([]string, labelColumnsCnt),
 	})
 }

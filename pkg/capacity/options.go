@@ -13,6 +13,7 @@ type Options struct {
 	PodLabels             string
 	NodeLabels            string
 	NodeTaints            string
+	LabelColumns          string
 	ExcludeTainted        bool
 	NamespaceLabels       string
 	Namespace             string
