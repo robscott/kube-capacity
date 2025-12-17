@@ -7,6 +7,14 @@ This is a simple CLI that provides an overview of the resource requests, limits,
 ## Installation
 Go binaries are automatically built with each release by [GoReleaser](https://github.com/goreleaser/goreleaser). These can be accessed on the GitHub [releases page](https://github.com/robscott/kube-capacity/releases) for this project.
 
+### Via Go
+
+If you have Go installed, you can run it without installing:
+
+```sh
+go run github.com/robscott/kube-capacity@latest --pods --util
+```
+
 ### Homebrew
 This project can be installed with [Homebrew](https://brew.sh/):
 ```
