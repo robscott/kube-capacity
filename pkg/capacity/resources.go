@@ -387,8 +387,19 @@ func (rm *resourceMetric) limitString(availableFormat bool) string {
 	return resourceString(rm.resourceType, rm.limit, rm.allocatable, availableFormat)
 }
 
-func (rm *resourceMetric) utilString(availableFormat bool) string {
-	return resourceString(rm.resourceType, rm.utilization, rm.allocatable, availableFormat)
+func (rm *resourceMetric) utilString(availableFormat bool, utilPercent string) string {
+	return resourceString(rm.resourceType, rm.utilization, rm.utilBase(utilPercent), availableFormat)
+}
+
+func (rm *resourceMetric) utilBase(utilPercent string) resource.Quantity {
+	switch utilPercent {
+	case "request":
+		return rm.request
+	case "limit":
+		return rm.limit
+	default:
+		return rm.allocatable
+	}
 }
 
 // podCountString returns the string representation of podCount struct, example: "15/110"
@@ -480,6 +491,17 @@ func (rm resourceMetric) percent(r resource.Quantity) int64 {
 	return int64(float64(r.MilliValue()) / float64(rm.allocatable.MilliValue()) * 100)
 }
 
+func (rm resourceMetric) utilPercentFunction(utilPercent string) func(r resource.Quantity) string {
+	base := rm.utilBase(utilPercent)
+	return func(r resource.Quantity) string {
+		pct := int64(0)
+		if base.MilliValue() > 0 {
+			pct = int64(float64(r.MilliValue()) / float64(base.MilliValue()) * 100)
+		}
+		return fmt.Sprintf("%v%%", pct)
+	}
+}
+
 // For CSV / TSV formatting Helper Functions
 // -----------------------------------------
 
@@ -522,8 +544,8 @@ func (rm *resourceMetric) utilActualString() string {
 	return resourceCSVString(rm.resourceType, rm.utilization)
 }
 
-func (rm *resourceMetric) utilPercentageString() string {
-	return resourceCSVPercentageString(rm.utilization, rm.allocatable)
+func (rm *resourceMetric) utilPercentageString(utilPercent string) string {
+	return resourceCSVPercentageString(rm.utilization, rm.utilBase(utilPercent))
 }
 
 func (pc *podCount) podCountCurrentString() string {

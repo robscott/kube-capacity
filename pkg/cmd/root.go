@@ -38,6 +38,10 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if opts.UsePrometheus {
+			opts.ShowUtil = true
+		}
+
 		capacity.FetchAndPrint(opts)
 	},
 }
@@ -87,6 +91,20 @@ func init() {
 		"hide-limits", "", false, "hide limits from output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.ShowLabels,
 		"show-labels", "", false, "includes node labels in output")
+	rootCmd.PersistentFlags().BoolVarP(&opts.UsePrometheus,
+		"prometheus", "", false, "use Prometheus instead of metrics-server for utilization data (implies --util)")
+	rootCmd.PersistentFlags().StringVarP(&opts.PrometheusEndpoint,
+		"prometheus-endpoint", "", "",
+		"Prometheus endpoint as namespace/service:port or direct URL; auto-discovered via app.kubernetes.io/name=prometheus label if not set")
+	rootCmd.PersistentFlags().StringVarP(&opts.PrometheusWindow,
+		"prometheus-window", "", "15m",
+		"time window for Prometheus metrics aggregation (e.g. 5m, 15m, 1h)")
+	rootCmd.PersistentFlags().StringVarP(&opts.PrometheusAggregation,
+		"prometheus-aggregation", "", "avg",
+		"aggregation function for Prometheus metrics over the window: avg (default) or max")
+	rootCmd.PersistentFlags().StringVarP(&opts.UtilPercent,
+		"util-percent", "", "node",
+		"base for utilization percentage: node (default, % of node allocatable), request (% of resource request), limit (% of resource limit)")
 }
 
 // Execute is the primary entrypoint for this CLI

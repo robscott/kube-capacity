@@ -98,6 +98,60 @@ example-node-2    tiller        tiller-deploy         140m (14%)      180m (18%)
 
 It's worth noting that utilization numbers from pods will likely not add up to the total node utilization numbers. Unlike request and limit numbers where node and cluster level numbers represent a sum of pod values, node metrics come directly from metrics-server and will likely include other forms of resource utilization.
 
+### Utilization Percentage Base
+By default, utilization percentages are calculated relative to the node's allocatable capacity. To see utilization as a percentage of resource requests or limits instead, use the `--util-percent` flag:
+
+```
+kube-capacity --pods --util --util-percent=request
+
+NODE              NAMESPACE     POD                   CPU REQUESTS    CPU LIMITS   CPU UTIL      MEMORY REQUESTS    MEMORY LIMITS   MEMORY UTIL
+*                 *             *                     560m (28%)      780m (38%)   340m (60%)    572Mi (9%)         770Mi (13%)     470Mi (82%)
+
+example-node-1    *             *                     220m (22%)      320m (32%)   160m (72%)    192Mi (6%)         360Mi (12%)     210Mi (109%)
+example-node-1    kube-system   metrics-server-lwc6z  100m (10%)      200m (20%)   70m (70%)     100Mi (3%)         200Mi (7%)      120Mi (120%)
+example-node-1    kube-system   coredns-7b5bcb98f8    120m (12%)      120m (12%)   90m (75%)     92Mi (3%)          160Mi (5%)      90Mi (97%)
+```
+
+Supported values:
+- `node` (default) - percentage of node allocatable capacity
+- `request` - percentage of resource requests
+- `limit` - percentage of resource limits
+
+This is particularly useful with `--pods` to quickly identify pods that exceed their requested resources.
+
+### Utilization from Prometheus
+By default, utilization data comes from [metrics-server](https://github.com/kubernetes-incubator/metrics-server). If you have Prometheus running in your cluster, you can use it as an alternative data source with the `--prometheus` flag:
+
+```
+kube-capacity --prometheus
+
+NODE              CPU REQUESTS    CPU LIMITS    CPU UTIL    MEMORY REQUESTS    MEMORY LIMITS   MEMORY UTIL
+*                 560m (28%)      130m (7%)     40m (2%)    572Mi (9%)         770Mi (13%)     470Mi (8%)
+example-node-1    220m (22%)      10m (1%)      10m (1%)    192Mi (6%)         360Mi (12%)     210Mi (7%)
+example-node-2    340m (34%)      120m (12%)    30m (3%)    380Mi (13%)        410Mi (14%)     260Mi (9%)
+```
+
+The `--prometheus` flag automatically enables utilization output, so `--util` is not required. By default, kube-capacity auto-discovers Prometheus by searching for a Kubernetes service with the label `app.kubernetes.io/name=prometheus` on port 9090. To use a specific Prometheus instance, use the `--prometheus-endpoint` flag:
+
+```
+kube-capacity --prometheus --prometheus-endpoint http://localhost:9090
+kube-capacity --prometheus --prometheus-endpoint my-namespace/my-prometheus:9090
+```
+
+The endpoint can be specified as a direct URL (`http://...` or `https://...`) or as a Kubernetes service in `namespace/service:port` format.
+
+By default, metrics are averaged over the last 15 minutes. You can change the time window and aggregation function:
+
+```
+# average over 1 hour (default aggregation is avg)
+kube-capacity --prometheus --prometheus-window=1h
+
+# peak (max) utilization over 30 minutes
+kube-capacity --prometheus --prometheus-aggregation=max --prometheus-window=30m
+```
+
+Supported aggregation functions: `avg` (default), `max`.
+
 ### Sorting
 To highlight the nodes, pods, and containers with the highest metrics, you can sort by a variety of columns:
 
@@ -198,14 +252,28 @@ kube-capacity --pods --containers --util --output tsv
                                     mem.limit.percentage name])
                                     (default "name")
   -u, --util                      includes resource utilization in output
+      --util-percent string       base for utilization percentage: node (default),
+                                    request, limit
+      --prometheus                use Prometheus instead of metrics-server for
+                                    utilization data (implies --util)
+      --prometheus-endpoint string
+                                    Prometheus endpoint as namespace/service:port
+                                    or direct URL; auto-discovered via
+                                    app.kubernetes.io/name=prometheus label if not set
+      --prometheus-window string  time window for Prometheus metrics aggregation
+                                    (default "15m")
+      --prometheus-aggregation string
+                                    aggregation over the window: avg (default), max
       --pod-count                 includes pod counts for each of the nodes and the whole cluster
       --show-labels               includes node labels in output
 ```
 
 ## Prerequisites
-Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server).
+
+Any commands requesting cluster utilization are dependent on [metrics-server](https://github.com/kubernetes-incubator/metrics-server) running on your cluster. If it's not already installed, you can install it with the official [helm chart](https://github.com/helm/charts/tree/master/stable/metrics-server). Alternatively, you can use Prometheus as the utilization data source with the `--prometheus` flag (see [Utilization from Prometheus](#utilization-from-prometheus)).
 
 ## Similar Projects
+
 There are already some great projects out there that have similar goals.
 
 - [kube-resource-report](https://github.com/hjacobs/kube-resource-report): generates HTML/CSS report for resource requests and limits across multiple clusters.
@@ -229,4 +297,5 @@ Although this project was originally developed by [robscott](https://github.com/
 - [isaacnboyd](https://github.com/isaacnboyd)
 
 ## License
+
 Apache License 2.0

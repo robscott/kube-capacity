@@ -149,6 +149,7 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 func (lp *listPrinter) buildListResourceOutput(item *resourceMetric) *listResourceOutput {
 	valueCalculator := item.valueFunction()
 	percentCalculator := item.percentFunction()
+	utilPercentCalculator := item.utilPercentFunction(lp.opts.UtilPercent)
 
 	out := listResourceOutput{}
 
@@ -164,7 +165,7 @@ func (lp *listPrinter) buildListResourceOutput(item *resourceMetric) *listResour
 
 	if lp.opts.ShowUtil {
 		out.Utilization = valueCalculator(item.utilization)
-		out.UtilizationPct = percentCalculator(item.utilization)
+		out.UtilizationPct = utilPercentCalculator(item.utilization)
 	}
 	return &out
 }

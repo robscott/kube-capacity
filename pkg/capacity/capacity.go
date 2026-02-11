@@ -42,15 +42,27 @@ func FetchAndPrint(opts Options) {
 	var nmList *v1beta1.NodeMetricsList
 
 	if opts.ShowUtil {
-		mClientset, err := kube.NewMetricsClientSet(opts.KubeContext, opts.KubeConfig, opts.InsecureSkipTLSVerify)
-		if err != nil {
-			fmt.Printf("Error connecting to Metrics API: %v\n", err)
-			os.Exit(4)
-		}
+		if opts.UsePrometheus {
+			var err error
+			pmList, nmList, err = getPrometheusMetrics(clientset, opts)
+			if err != nil {
+				fmt.Printf("Error getting metrics from Prometheus: %v\n", err)
+				os.Exit(4)
+			}
+			if opts.Namespace != "" || opts.NamespaceLabels != "" {
+				nmList = nil
+			}
+		} else {
+			mClientset, err := kube.NewMetricsClientSet(opts.KubeContext, opts.KubeConfig, opts.InsecureSkipTLSVerify)
+			if err != nil {
+				fmt.Printf("Error connecting to Metrics API: %v\n", err)
+				os.Exit(4)
+			}
 
-		pmList = getPodMetrics(mClientset, opts.Namespace)
-		if opts.Namespace == "" && opts.NamespaceLabels == "" {
-			nmList = getNodeMetrics(mClientset, nodeList, opts.NodeLabels)
+			pmList = getPodMetrics(mClientset, opts.Namespace)
+			if opts.Namespace == "" && opts.NamespaceLabels == "" {
+				nmList = getNodeMetrics(mClientset, nodeList, opts.NodeLabels)
+			}
 		}
 	}
 

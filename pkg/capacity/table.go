@@ -159,10 +159,10 @@ func (tp *tablePrinter) printClusterLine() {
 		container:      VoidValue,
 		cpuRequests:    tp.cm.cpu.requestString(tp.opts.AvailableFormat),
 		cpuLimits:      tp.cm.cpu.limitString(tp.opts.AvailableFormat),
-		cpuUtil:        tp.cm.cpu.utilString(tp.opts.AvailableFormat),
+		cpuUtil:        tp.cm.cpu.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 		memoryRequests: tp.cm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   tp.cm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     tp.cm.memory.utilString(tp.opts.AvailableFormat),
+		memoryUtil:     tp.cm.memory.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 		podCount:       tp.cm.podCount.podCountString(),
 		labels:         VoidValue,
 	})
@@ -176,10 +176,10 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		container:      VoidValue,
 		cpuRequests:    nm.cpu.requestString(tp.opts.AvailableFormat),
 		cpuLimits:      nm.cpu.limitString(tp.opts.AvailableFormat),
-		cpuUtil:        nm.cpu.utilString(tp.opts.AvailableFormat),
+		cpuUtil:        nm.cpu.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 		memoryRequests: nm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   nm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat),
+		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 		podCount:       nm.podCount.podCountString(),
 		labels:         nodeLabelsString(nm.labels),
 	})
@@ -193,10 +193,10 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 		container:      VoidValue,
 		cpuRequests:    pm.cpu.requestString(tp.opts.AvailableFormat),
 		cpuLimits:      pm.cpu.limitString(tp.opts.AvailableFormat),
-		cpuUtil:        pm.cpu.utilString(tp.opts.AvailableFormat),
+		cpuUtil:        pm.cpu.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 		memoryRequests: pm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   pm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     pm.memory.utilString(tp.opts.AvailableFormat),
+		memoryUtil:     pm.memory.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 	})
 }
 
@@ -208,9 +208,9 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		container:      cm.name,
 		cpuRequests:    cm.cpu.requestString(tp.opts.AvailableFormat),
 		cpuLimits:      cm.cpu.limitString(tp.opts.AvailableFormat),
-		cpuUtil:        cm.cpu.utilString(tp.opts.AvailableFormat),
+		cpuUtil:        cm.cpu.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 		memoryRequests: cm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   cm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     cm.memory.utilString(tp.opts.AvailableFormat),
+		memoryUtil:     cm.memory.utilString(tp.opts.AvailableFormat, tp.opts.UtilPercent),
 	})
 }
