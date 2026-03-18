@@ -16,6 +16,7 @@ package capacity
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -55,7 +56,70 @@ func FetchAndPrint(opts Options) {
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
+
+	if opts.ShowKubeletConfig {
+		for _, node := range nodeList.Items {
+			nm, ok := cm.nodeMetrics[node.Name]
+			if !ok {
+				continue
+			}
+			fetchKubeletConfig(clientset, nm, node.Name)
+		}
+	}
+
 	printList(&cm, opts)
+}
+
+func fetchKubeletConfig(clientset kubernetes.Interface, nm *nodeMetric, nodeName string) {
+	rawConfig, err := clientset.CoreV1().RESTClient().Get().
+		Resource("nodes").
+		Name(nodeName).
+		SubResource("proxy").
+		Suffix("configz").
+		DoRaw(context.TODO())
+
+	if err != nil {
+		// Just leave the N/A defaults
+		return
+	}
+
+	var configData struct {
+		KubeletConfig struct {
+			MaxPods              int64             `json:"maxPods"`
+			PodPidsLimit         int64             `json:"podPidsLimit"`
+			SystemReserved       map[string]string `json:"systemReserved"`
+			EvictionHard         map[string]string `json:"evictionHard"`
+			ImageGCHighThreshold int               `json:"imageGCHighThresholdPercent"`
+		} `json:"kubeletconfig"`
+	}
+
+	if err := json.Unmarshal(rawConfig, &configData); err == nil {
+		if configData.KubeletConfig.MaxPods != 0 {
+			nm.kubeletConfig.MaxPods = fmt.Sprintf("%d", configData.KubeletConfig.MaxPods)
+		}
+		// In k8s, a pid limit of -1 means unbound.
+		if configData.KubeletConfig.PodPidsLimit != 0 {
+			nm.kubeletConfig.PidsLimit = fmt.Sprintf("%d", configData.KubeletConfig.PodPidsLimit)
+		}
+		
+		if val, exists := configData.KubeletConfig.SystemReserved["cpu"]; exists {
+			nm.kubeletConfig.SystemReservedCPU = val
+		}
+		if val, exists := configData.KubeletConfig.SystemReserved["memory"]; exists {
+			nm.kubeletConfig.SystemReservedMemory = val
+		}
+
+		if val, exists := configData.KubeletConfig.EvictionHard["memory.available"]; exists {
+			nm.kubeletConfig.EvictionMemory = val
+		}
+		if val, exists := configData.KubeletConfig.EvictionHard["imagefs.available"]; exists {
+			nm.kubeletConfig.EvictionImageFS = val
+		}
+
+		if configData.KubeletConfig.ImageGCHighThreshold != 0 {
+			nm.kubeletConfig.ImageGCHighThreshold = fmt.Sprintf("%d%%", configData.KubeletConfig.ImageGCHighThreshold)
+		}
+	}
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {

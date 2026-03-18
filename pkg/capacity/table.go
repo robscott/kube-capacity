@@ -29,7 +29,7 @@ type tablePrinter struct {
 
 func (tp *tablePrinter) hasVisibleColumns() bool {
 	// Check if any data columns will be shown
-	return !tp.opts.HideRequests || !tp.opts.HideLimits || tp.opts.ShowUtil || tp.opts.ShowPodCount || tp.opts.ShowLabels
+	return !tp.opts.HideRequests || !tp.opts.HideLimits || tp.opts.ShowUtil || tp.opts.ShowPodCount || tp.opts.ShowKubeletConfig || tp.opts.ShowLabels
 }
 
 type tableLine struct {
@@ -42,9 +42,16 @@ type tableLine struct {
 	cpuUtil        string
 	memoryRequests string
 	memoryLimits   string
-	memoryUtil     string
-	podCount       string
-	labels         string
+	memoryUtil           string
+	podCount             string
+	kubeletMaxPods       string
+	kubeletPidsLimit     string
+	kubeletSysResCPU     string
+	kubeletSysResMem     string
+	kubeletEvictMem      string
+	kubeletEvictImage    string
+	kubeletGCHigh        string
+	labels               string
 }
 
 var headerStrings = tableLine{
@@ -57,9 +64,16 @@ var headerStrings = tableLine{
 	cpuUtil:        "CPU UTIL",
 	memoryRequests: "MEMORY REQUESTS",
 	memoryLimits:   "MEMORY LIMITS",
-	memoryUtil:     "MEMORY UTIL",
-	podCount:       "POD COUNT",
-	labels:         "LABELS",
+	memoryUtil:           "MEMORY UTIL",
+	podCount:             "POD COUNT",
+	kubeletMaxPods:       "MAXPODS",
+	kubeletPidsLimit:     "PIDS_LMT",
+	kubeletSysResCPU:     "SYS_RES_CPU",
+	kubeletSysResMem:     "SYS_RES_MEM",
+	kubeletEvictMem:      "EVICT_MEM",
+	kubeletEvictImage:    "EVICT_IMG",
+	kubeletGCHigh:        "GC_HIGH",
+	labels:               "LABELS",
 }
 
 func (tp *tablePrinter) Print() {
@@ -144,6 +158,10 @@ func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
 		lineItems = append(lineItems, tl.podCount)
 	}
 
+	if tp.opts.ShowKubeletConfig {
+		lineItems = append(lineItems, tl.kubeletMaxPods, tl.kubeletPidsLimit, tl.kubeletSysResCPU, tl.kubeletSysResMem, tl.kubeletEvictMem, tl.kubeletEvictImage, tl.kubeletGCHigh)
+	}
+
 	if tp.opts.ShowLabels {
 		lineItems = append(lineItems, tl.labels)
 	}
@@ -162,9 +180,16 @@ func (tp *tablePrinter) printClusterLine() {
 		cpuUtil:        tp.cm.cpu.utilString(tp.opts.AvailableFormat),
 		memoryRequests: tp.cm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   tp.cm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     tp.cm.memory.utilString(tp.opts.AvailableFormat),
-		podCount:       tp.cm.podCount.podCountString(),
-		labels:         VoidValue,
+		memoryUtil:        tp.cm.memory.utilString(tp.opts.AvailableFormat),
+		podCount:          tp.cm.podCount.podCountString(),
+		kubeletMaxPods:    VoidValue,
+		kubeletPidsLimit:  VoidValue,
+		kubeletSysResCPU:  VoidValue,
+		kubeletSysResMem:  VoidValue,
+		kubeletEvictMem:   VoidValue,
+		kubeletEvictImage: VoidValue,
+		kubeletGCHigh:     VoidValue,
+		labels:            VoidValue,
 	})
 }
 
@@ -179,9 +204,16 @@ func (tp *tablePrinter) printNodeLine(nodeName string, nm *nodeMetric) {
 		cpuUtil:        nm.cpu.utilString(tp.opts.AvailableFormat),
 		memoryRequests: nm.memory.requestString(tp.opts.AvailableFormat),
 		memoryLimits:   nm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     nm.memory.utilString(tp.opts.AvailableFormat),
-		podCount:       nm.podCount.podCountString(),
-		labels:         nodeLabelsString(nm.labels),
+		memoryUtil:        nm.memory.utilString(tp.opts.AvailableFormat),
+		podCount:          nm.podCount.podCountString(),
+		kubeletMaxPods:    nm.kubeletConfig.MaxPods,
+		kubeletPidsLimit:  nm.kubeletConfig.PidsLimit,
+		kubeletSysResCPU:  nm.kubeletConfig.SystemReservedCPU,
+		kubeletSysResMem:  nm.kubeletConfig.SystemReservedMemory,
+		kubeletEvictMem:   nm.kubeletConfig.EvictionMemory,
+		kubeletEvictImage: nm.kubeletConfig.EvictionImageFS,
+		kubeletGCHigh:     nm.kubeletConfig.ImageGCHighThreshold,
+		labels:            nodeLabelsString(nm.labels),
 	})
 }
 
@@ -195,8 +227,15 @@ func (tp *tablePrinter) printPodLine(nodeName string, pm *podMetric) {
 		cpuLimits:      pm.cpu.limitString(tp.opts.AvailableFormat),
 		cpuUtil:        pm.cpu.utilString(tp.opts.AvailableFormat),
 		memoryRequests: pm.memory.requestString(tp.opts.AvailableFormat),
-		memoryLimits:   pm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     pm.memory.utilString(tp.opts.AvailableFormat),
+		memoryLimits:      pm.memory.limitString(tp.opts.AvailableFormat),
+		memoryUtil:        pm.memory.utilString(tp.opts.AvailableFormat),
+		kubeletMaxPods:    VoidValue,
+		kubeletPidsLimit:  VoidValue,
+		kubeletSysResCPU:  VoidValue,
+		kubeletSysResMem:  VoidValue,
+		kubeletEvictMem:   VoidValue,
+		kubeletEvictImage: VoidValue,
+		kubeletGCHigh:     VoidValue,
 	})
 }
 
@@ -210,7 +249,14 @@ func (tp *tablePrinter) printContainerLine(nodeName string, pm *podMetric, cm *c
 		cpuLimits:      cm.cpu.limitString(tp.opts.AvailableFormat),
 		cpuUtil:        cm.cpu.utilString(tp.opts.AvailableFormat),
 		memoryRequests: cm.memory.requestString(tp.opts.AvailableFormat),
-		memoryLimits:   cm.memory.limitString(tp.opts.AvailableFormat),
-		memoryUtil:     cm.memory.utilString(tp.opts.AvailableFormat),
+		memoryLimits:      cm.memory.limitString(tp.opts.AvailableFormat),
+		memoryUtil:        cm.memory.utilString(tp.opts.AvailableFormat),
+		kubeletMaxPods:    VoidValue,
+		kubeletPidsLimit:  VoidValue,
+		kubeletSysResCPU:  VoidValue,
+		kubeletSysResMem:  VoidValue,
+		kubeletEvictMem:   VoidValue,
+		kubeletEvictImage: VoidValue,
+		kubeletGCHigh:     VoidValue,
 	})
 }

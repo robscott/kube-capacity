@@ -61,12 +61,23 @@ type clusterMetric struct {
 }
 
 type nodeMetric struct {
-	name       string
-	labels     map[string]string
-	cpu        *resourceMetric
-	memory     *resourceMetric
-	podMetrics map[string]*podMetric
-	podCount   *podCount
+	name          string
+	labels        map[string]string
+	cpu           *resourceMetric
+	memory        *resourceMetric
+	podMetrics    map[string]*podMetric
+	podCount      *podCount
+	kubeletConfig *KubeletConfig
+}
+
+type KubeletConfig struct {
+	MaxPods              string
+	PidsLimit            string
+	SystemReservedCPU    string
+	SystemReservedMemory string
+	EvictionMemory       string
+	EvictionImageFS      string
+	ImageGCHighThreshold string
 }
 
 type podMetric struct {
@@ -123,6 +134,15 @@ func buildClusterMetric(podList *corev1.PodList, pmList *v1beta1.PodMetricsList,
 			podCount: &podCount{
 				current:     tmpPodCount,
 				allocatable: node.Status.Allocatable.Pods().Value(),
+			},
+			kubeletConfig: &KubeletConfig{
+				MaxPods:              "N/A",
+				PidsLimit:            "N/A",
+				SystemReservedCPU:    "N/A",
+				SystemReservedMemory: "N/A",
+				EvictionMemory:       "N/A",
+				EvictionImageFS:      "N/A",
+				ImageGCHighThreshold: "N/A",
 			},
 		}
 

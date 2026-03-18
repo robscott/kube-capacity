@@ -7,6 +7,7 @@ type Options struct {
 	ShowPods              bool
 	ShowUtil              bool
 	ShowPodCount          bool
+	ShowKubeletConfig     bool
 	ShowLabels            bool
 	HideRequests          bool
 	HideLimits            bool
