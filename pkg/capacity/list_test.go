@@ -291,3 +291,124 @@ func getTestClusterMetric() clusterMetric {
 		},
 	)
 }
+
+func TestBuildListClusterMetricsWithInitContainers(t *testing.T) {
+	cm := getTestClusterMetricWithInitContainers()
+
+	lp := listPrinter{
+		cm: &cm,
+		opts: Options{
+			ShowPods:           true,
+			ShowContainers:     true,
+			ShowInitContainers: true,
+		},
+	}
+
+	lcm := lp.buildListClusterMetrics()
+
+	assert.Len(t, lcm.Nodes, 1)
+	assert.Len(t, lcm.Nodes[0].Pods, 1)
+
+	pod := lcm.Nodes[0].Pods[0]
+	assert.Len(t, pod.Containers, 1)
+	assert.Len(t, pod.InitContainers, 1)
+
+	ic := pod.InitContainers[0]
+	assert.Equal(t, "init-db", ic.Name)
+	assert.Equal(t, "50m", ic.CPU.Requests)
+	assert.Equal(t, "100m", ic.CPU.Limits)
+	assert.Equal(t, "64Mi", ic.Memory.Requests)
+	assert.Equal(t, "128Mi", ic.Memory.Limits)
+}
+
+func getTestClusterMetricWithInitContainers() clusterMetric {
+	return buildClusterMetric(
+		&corev1.PodList{
+			Items: []corev1.Pod{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "example-pod",
+						Namespace: "default",
+					},
+					Spec: corev1.PodSpec{
+						NodeName: "example-node-1",
+						Containers: []corev1.Container{
+							{
+								Name: "main",
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										"cpu":    resource.MustParse("100m"),
+										"memory": resource.MustParse("100Mi"),
+									},
+									Limits: corev1.ResourceList{
+										"cpu":    resource.MustParse("200m"),
+										"memory": resource.MustParse("200Mi"),
+									},
+								},
+							},
+						},
+						InitContainers: []corev1.Container{
+							{
+								Name: "init-db",
+								Resources: corev1.ResourceRequirements{
+									Requests: corev1.ResourceList{
+										"cpu":    resource.MustParse("50m"),
+										"memory": resource.MustParse("64Mi"),
+									},
+									Limits: corev1.ResourceList{
+										"cpu":    resource.MustParse("100m"),
+										"memory": resource.MustParse("128Mi"),
+									},
+								},
+							},
+						},
+					},
+					Status: corev1.PodStatus{
+						InitContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name:  "init-db",
+								State: corev1.ContainerState{Running: &corev1.ContainerStateRunning{}},
+							},
+						},
+					},
+				},
+			},
+		},
+		&v1beta1.PodMetricsList{},
+		&corev1.NodeList{
+			Items: []corev1.Node{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "example-node-1",
+					},
+					Status: corev1.NodeStatus{
+						Allocatable: corev1.ResourceList{
+							"cpu":    resource.MustParse("1000m"),
+							"memory": resource.MustParse("4000Mi"),
+							"pods":   resource.MustParse("110"),
+						},
+					},
+				},
+			},
+		},
+		&v1beta1.NodeMetricsList{},
+	)
+}
+
+func TestBuildListClusterMetricsShowInitContainersNonePresent(t *testing.T) {
+	cm := getTestClusterMetric() // this fixture has no InitContainers
+
+	lp := listPrinter{
+		cm: &cm,
+		opts: Options{
+			ShowPods:           true,
+			ShowContainers:     true,
+			ShowInitContainers: true,
+		},
+	}
+
+	lcm := lp.buildListClusterMetrics()
+
+	assert.Len(t, lcm.Nodes[0].Pods, 1)
+	assert.Empty(t, lcm.Nodes[0].Pods[0].InitContainers)
+}

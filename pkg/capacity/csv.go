@@ -99,6 +99,15 @@ func (cp *csvPrinter) Print(outputType string) {
 					for _, containerMetric := range containerMetrics {
 						cp.printContainerLine(nm.name, pm, containerMetric)
 					}
+					if cp.opts.ShowInitContainers {
+						for _, icm := range pm.getSortedInitContainerMetrics(cp.opts.SortBy) {
+							cp.printContainerLine(nm.name, pm, &containerMetric{
+								name:   "[init]" + icm.name,
+								cpu:    icm.cpu,
+								memory: icm.memory,
+							})
+						}
+					}
 				}
 			}
 		}

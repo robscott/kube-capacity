@@ -87,6 +87,8 @@ func init() {
 		"hide-limits", "", false, "hide limits from output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.ShowLabels,
 		"show-labels", "", false, "includes node labels in output")
+	rootCmd.PersistentFlags().BoolVarP(&opts.ShowInitContainers,
+		"show-init-containers", "", false, "includes init containers in output (implies --containers)")
 }
 
 // Execute is the primary entrypoint for this CLI

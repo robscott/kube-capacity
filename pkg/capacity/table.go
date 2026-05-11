@@ -88,6 +88,15 @@ func (tp *tablePrinter) Print() {
 					for _, containerMetric := range containerMetrics {
 						tp.printContainerLine(nm.name, pm, containerMetric)
 					}
+					if tp.opts.ShowInitContainers {
+						for _, icm := range pm.getSortedInitContainerMetrics(tp.opts.SortBy) {
+							tp.printContainerLine(nm.name, pm, &containerMetric{
+								name:   "[init]" + icm.name,
+								cpu:    icm.cpu,
+								memory: icm.memory,
+							})
+						}
+					}
 				}
 			}
 		}
