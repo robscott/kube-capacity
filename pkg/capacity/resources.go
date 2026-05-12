@@ -70,11 +70,12 @@ type nodeMetric struct {
 }
 
 type podMetric struct {
-	name             string
-	namespace        string
-	cpu              *resourceMetric
-	memory           *resourceMetric
-	containerMetrics map[string]*containerMetric
+	name                 string
+	namespace            string
+	cpu                  *resourceMetric
+	memory               *resourceMetric
+	containerMetrics     map[string]*containerMetric
+	initContainerMetrics map[string]*containerMetric
 }
 
 type containerMetric struct {
@@ -183,6 +184,10 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 	key := fmt.Sprintf("%s-%s", pod.Namespace, pod.Name)
 	nm := cm.nodeMetrics[pod.Spec.NodeName]
 
+	if nm == nil {
+		return
+	}
+
 	pm := &podMetric{
 		name:      pod.Name,
 		namespace: pod.Namespace,
@@ -196,7 +201,8 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 			request:      req["memory"],
 			limit:        limit["memory"],
 		},
-		containerMetrics: map[string]*containerMetric{},
+		containerMetrics:     map[string]*containerMetric{},
+		initContainerMetrics: map[string]*containerMetric{},
 	}
 
 	for _, container := range pod.Spec.Containers {
@@ -217,24 +223,56 @@ func (cm *clusterMetric) addPodMetric(pod *corev1.Pod, podMetrics v1beta1.PodMet
 		}
 	}
 
-	if nm != nil {
-		nm.podMetrics[key] = pm
-		nm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
-		nm.podMetrics[key].memory.allocatable = nm.memory.allocatable
-
-		nm.cpu.request.Add(req["cpu"])
-		nm.cpu.limit.Add(limit["cpu"])
-		nm.memory.request.Add(req["memory"])
-		nm.memory.limit.Add(limit["memory"])
+	// build the status for all init containers by name
+	initContainerStatus := map[string]bool{}
+	for _, containerStatus := range pod.Status.InitContainerStatuses {
+		initContainerStatus[containerStatus.Name] = containerStatus.State.Running != nil
 	}
 
+	for _, container := range pod.Spec.InitContainers {
+		// skip finished init containers
+		if initContainerStatus[container.Name] {
+			pm.initContainerMetrics[container.Name] = &containerMetric{
+				name: container.Name,
+				cpu: &resourceMetric{
+					resourceType: "cpu",
+					request:      container.Resources.Requests["cpu"],
+					limit:        container.Resources.Limits["cpu"],
+					allocatable:  nm.cpu.allocatable,
+				},
+				memory: &resourceMetric{
+					resourceType: "memory",
+					request:      container.Resources.Requests["memory"],
+					limit:        container.Resources.Limits["memory"],
+					allocatable:  nm.memory.allocatable,
+				},
+			}
+		}
+	}
+	nm.podMetrics[key] = pm
+	nm.podMetrics[key].cpu.allocatable = nm.cpu.allocatable
+	nm.podMetrics[key].memory.allocatable = nm.memory.allocatable
+
+	nm.cpu.request.Add(req["cpu"])
+	nm.cpu.limit.Add(limit["cpu"])
+	nm.memory.request.Add(req["memory"])
+	nm.memory.limit.Add(limit["memory"])
+
 	for _, container := range podMetrics.Containers {
-		cm := pm.containerMetrics[container.Name]
-		if cm != nil {
-			pm.containerMetrics[container.Name].cpu.utilization = container.Usage["cpu"]
-			pm.cpu.utilization.Add(container.Usage["cpu"])
-			pm.containerMetrics[container.Name].memory.utilization = container.Usage["memory"]
-			pm.memory.utilization.Add(container.Usage["memory"])
+		if cm, ok := pm.containerMetrics[container.Name]; ok {
+			if cm != nil {
+				pm.containerMetrics[container.Name].cpu.utilization = container.Usage["cpu"]
+				pm.cpu.utilization.Add(container.Usage["cpu"])
+				pm.containerMetrics[container.Name].memory.utilization = container.Usage["memory"]
+				pm.memory.utilization.Add(container.Usage["memory"])
+			}
+		} else if cm, ok := pm.initContainerMetrics[container.Name]; ok {
+			if cm != nil {
+				pm.initContainerMetrics[container.Name].cpu.utilization = container.Usage["cpu"]
+				pm.cpu.utilization.Add(container.Usage["cpu"])
+				pm.initContainerMetrics[container.Name].memory.utilization = container.Usage["memory"]
+				pm.memory.utilization.Add(container.Usage["memory"])
+			}
 		}
 	}
 }
@@ -345,19 +383,13 @@ func (nm *nodeMetric) addPodUtilization() {
 	}
 }
 
-func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric {
-	sortedContainerMetrics := make([]*containerMetric, len(pm.containerMetrics))
-
-	i := 0
-	for name := range pm.containerMetrics {
-		sortedContainerMetrics[i] = pm.containerMetrics[name]
-		i++
+func sortedContainerMetricSlice(metrics map[string]*containerMetric, sortBy string) []*containerMetric {
+	sorted := make([]*containerMetric, 0, len(metrics))
+	for _, cm := range metrics {
+		sorted = append(sorted, cm)
 	}
-
-	sort.Slice(sortedContainerMetrics, func(i, j int) bool {
-		m1 := sortedContainerMetrics[i]
-		m2 := sortedContainerMetrics[j]
-
+	sort.Slice(sorted, func(i, j int) bool {
+		m1, m2 := sorted[i], sorted[j]
 		switch sortBy {
 		case "cpu.util":
 			return m2.cpu.utilization.MilliValue() < m1.cpu.utilization.MilliValue()
@@ -375,8 +407,15 @@ func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric
 			return m1.name < m2.name
 		}
 	})
+	return sorted
+}
 
-	return sortedContainerMetrics
+func (pm *podMetric) getSortedContainerMetrics(sortBy string) []*containerMetric {
+	return sortedContainerMetricSlice(pm.containerMetrics, sortBy)
+}
+
+func (pm *podMetric) getSortedInitContainerMetrics(sortBy string) []*containerMetric {
+	return sortedContainerMetricSlice(pm.initContainerMetrics, sortBy)
 }
 
 func (rm *resourceMetric) requestString(availableFormat bool) string {

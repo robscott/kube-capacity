@@ -31,11 +31,12 @@ type listNodeMetric struct {
 }
 
 type listPod struct {
-	Name       string              `json:"name"`
-	Namespace  string              `json:"namespace"`
-	CPU        *listResourceOutput `json:"cpu"`
-	Memory     *listResourceOutput `json:"memory"`
-	Containers []listContainer     `json:"containers,omitempty"`
+	Name           string              `json:"name"`
+	Namespace      string              `json:"namespace"`
+	CPU            *listResourceOutput `json:"cpu"`
+	Memory         *listResourceOutput `json:"memory"`
+	Containers     []listContainer     `json:"containers,omitempty"`
+	InitContainers []listContainer     `json:"initContainers,omitempty"`
 }
 
 type listContainer struct {
@@ -137,6 +138,17 @@ func (lp *listPrinter) buildListClusterMetrics() listClusterMetrics {
 						})
 					}
 				}
+
+				if lp.opts.ShowInitContainers {
+					for _, icm := range podMetric.getSortedInitContainerMetrics(lp.opts.SortBy) {
+						pod.InitContainers = append(pod.InitContainers, listContainer{
+							Name:   icm.name,
+							CPU:    lp.buildListResourceOutput(icm.cpu),
+							Memory: lp.buildListResourceOutput(icm.memory),
+						})
+					}
+				}
+
 				node.Pods = append(node.Pods, &pod)
 			}
 		}
