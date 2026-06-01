@@ -38,6 +38,11 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if err := capacity.ValidateColumns(opts.Columns); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
 		capacity.FetchAndPrint(opts)
 	},
 }
@@ -87,6 +92,8 @@ func init() {
 		"hide-limits", "", false, "hide limits from output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.ShowLabels,
 		"show-labels", "", false, "includes node labels in output")
+	rootCmd.PersistentFlags().StringVarP(&opts.Columns,
+		"columns", "", "", fmt.Sprintf("comma-separated list of columns to display (available: %v)", capacity.AvailableColumns))
 }
 
 // Execute is the primary entrypoint for this CLI
