@@ -24,4 +24,5 @@ type Options struct {
 	AvailableFormat       bool
 	ImpersonateUser       string
 	ImpersonateGroup      string
+	Columns               string
 }

@@ -28,6 +28,9 @@ type tablePrinter struct {
 }
 
 func (tp *tablePrinter) hasVisibleColumns() bool {
+	if tp.opts.Columns != "" {
+		return true
+	}
 	// Check if any data columns will be shown
 	return !tp.opts.HideRequests || !tp.opts.HideLimits || tp.opts.ShowUtil || tp.opts.ShowPodCount || tp.opts.ShowLabels
 }
@@ -60,6 +63,57 @@ var headerStrings = tableLine{
 	memoryUtil:     "MEMORY UTIL",
 	podCount:       "POD COUNT",
 	labels:         "LABELS",
+}
+
+// AvailableColumns lists all valid column names for the --columns flag.
+var AvailableColumns = []string{
+	"cpu.request", "cpu.limit", "cpu.util",
+	"mem.request", "mem.limit", "mem.util",
+	"pod.count", "labels",
+}
+
+// columnDisplayName maps column names to their header display strings.
+var columnDisplayName = map[string]string{
+	"cpu.request": "CPU REQUESTS",
+	"cpu.limit":   "CPU LIMITS",
+	"cpu.util":    "CPU UTIL",
+	"mem.request": "MEMORY REQUESTS",
+	"mem.limit":   "MEMORY LIMITS",
+	"mem.util":    "MEMORY UTIL",
+	"pod.count":   "POD COUNT",
+	"labels":      "LABELS",
+}
+
+// ValidateColumns checks that all provided column names are valid.
+func ValidateColumns(columns string) error {
+	if columns == "" {
+		return nil
+	}
+	validSet := make(map[string]bool)
+	for _, c := range AvailableColumns {
+		validSet[c] = true
+	}
+	for _, c := range strings.Split(columns, ",") {
+		c = strings.TrimSpace(c)
+		if c != "" && !validSet[c] {
+			return fmt.Errorf("invalid column %q, available columns: %v", c, AvailableColumns)
+		}
+	}
+	return nil
+}
+
+func (tp *tablePrinter) selectedColumns() map[string]bool {
+	if tp.opts.Columns == "" {
+		return nil
+	}
+	selected := make(map[string]bool)
+	for _, c := range strings.Split(tp.opts.Columns, ",") {
+		c = strings.TrimSpace(c)
+		if c != "" {
+			selected[c] = true
+		}
+	}
+	return selected
 }
 
 func (tp *tablePrinter) Print() {
@@ -105,6 +159,53 @@ func (tp *tablePrinter) printLine(tl *tableLine) {
 }
 
 func (tp *tablePrinter) getLineItems(tl *tableLine) []string {
+	selected := tp.selectedColumns()
+
+	// When --columns is specified, use column-based filtering
+	if selected != nil {
+		lineItems := []string{tl.node}
+
+		if tp.opts.ShowContainers || tp.opts.ShowPods {
+			if tp.opts.Namespace == "" {
+				lineItems = append(lineItems, tl.namespace)
+			}
+			lineItems = append(lineItems, tl.pod)
+		}
+
+		if tp.opts.ShowContainers {
+			lineItems = append(lineItems, tl.container)
+		}
+
+		// Add only selected data columns
+		if selected["cpu.request"] {
+			lineItems = append(lineItems, tl.cpuRequests)
+		}
+		if selected["cpu.limit"] {
+			lineItems = append(lineItems, tl.cpuLimits)
+		}
+		if selected["cpu.util"] {
+			lineItems = append(lineItems, tl.cpuUtil)
+		}
+		if selected["mem.request"] {
+			lineItems = append(lineItems, tl.memoryRequests)
+		}
+		if selected["mem.limit"] {
+			lineItems = append(lineItems, tl.memoryLimits)
+		}
+		if selected["mem.util"] {
+			lineItems = append(lineItems, tl.memoryUtil)
+		}
+		if selected["pod.count"] {
+			lineItems = append(lineItems, tl.podCount)
+		}
+		if selected["labels"] {
+			lineItems = append(lineItems, tl.labels)
+		}
+
+		return lineItems
+	}
+
+	// Legacy flag-based filtering
 	lineItems := []string{tl.node}
 
 	if tp.opts.ShowContainers || tp.opts.ShowPods {
