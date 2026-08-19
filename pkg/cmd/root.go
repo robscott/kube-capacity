@@ -53,16 +53,16 @@ func init() {
 		"pod-count", "", false, "includes pod count per node in output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.AvailableFormat,
 		"available", "a", false, "includes quantity available instead of percentage used")
-	rootCmd.PersistentFlags().StringVarP(&opts.PodLabels,
-		"pod-labels", "l", "", "labels to filter pods with")
-	rootCmd.PersistentFlags().StringVarP(&opts.NodeLabels,
-		"node-labels", "", "", "labels to filter nodes with")
+	rootCmd.PersistentFlags().StringArrayVarP(&opts.PodLabels,
+		"pod-labels", "l", []string{}, "labels to filter pods with")
+	rootCmd.PersistentFlags().StringArrayVarP(&opts.NodeLabels,
+		"node-labels", "", []string{}, "labels to filter nodes with")
 	rootCmd.PersistentFlags().BoolVarP(&opts.ExcludeTainted,
 		"no-taint", "", false, "exclude nodes with taints")
 	rootCmd.PersistentFlags().StringVarP(&opts.NodeTaints,
 		"node-taints", "t", "", "comma seperated list of taints to filter nodes with, prefix taint with '!' to filter out")
-	rootCmd.PersistentFlags().StringVarP(&opts.NamespaceLabels,
-		"namespace-labels", "", "", "labels to filter namespaces with")
+	rootCmd.PersistentFlags().StringArrayVarP(&opts.NamespaceLabels,
+		"namespace-labels", "", []string{}, "labels to filter namespaces with")
 	rootCmd.PersistentFlags().StringVarP(&opts.Namespace,
 		"namespace", "n", "", "only include pods from this namespace")
 	rootCmd.PersistentFlags().StringVarP(&opts.KubeContext,

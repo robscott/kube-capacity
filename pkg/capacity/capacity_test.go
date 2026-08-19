@@ -214,3 +214,18 @@ func pod(node, namespace, name string, labels map[string]string) *corev1.Pod {
 		},
 	}
 }
+
+func TestGetPodsAndNodes_MultiLabelFilter(t *testing.T) {
+	clientset := fake.NewSimpleClientset(
+		node("node-a", map[string]string{"env": "prod", "region": "us-east"}, false),
+		node("node-b", map[string]string{"env": "prod", "region": "us-west"}, false),
+		node("node-c", map[string]string{"env": "dev", "region": "us-east"}, false),
+		pod("node-a", "default", "pod1", map[string]string{"app": "web"}),
+		pod("node-b", "default", "pod2", map[string]string{"app": "api"}),
+		pod("node-c", "default", "pod3", map[string]string{"app": "worker"}),
+	)
+
+	podList, nodeList := getPodsAndNodes(clientset, false, "", "env=prod,region=us-east", "", "", "")
+	assert.Equal(t, []string{"node-a"}, listNodes(nodeList))
+	assert.Equal(t, []string{"default/pod1"}, listPods(podList))
+}

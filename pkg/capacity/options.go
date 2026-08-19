@@ -10,11 +10,11 @@ type Options struct {
 	ShowLabels            bool
 	HideRequests          bool
 	HideLimits            bool
-	PodLabels             string
-	NodeLabels            string
+	PodLabels             []string
+	NodeLabels            []string
 	NodeTaints            string
 	ExcludeTainted        bool
-	NamespaceLabels       string
+	NamespaceLabels       []string
 	Namespace             string
 	KubeContext           string
 	KubeConfig            string
