@@ -37,7 +37,7 @@ func FetchAndPrint(opts Options) {
 		os.Exit(1)
 	}
 
-	podList, nodeList := getPodsAndNodes(clientset, opts.ExcludeTainted, opts.PodLabels, opts.NodeLabels, opts.NodeTaints, opts.NamespaceLabels, opts.Namespace)
+	podList, nodeList := getPodsAndNodes(clientset, opts.ExcludeTainted, joinStringSlice(opts.PodLabels), joinStringSlice(opts.NodeLabels), opts.NodeTaints, joinStringSlice(opts.NamespaceLabels), opts.Namespace)
 	var pmList *v1beta1.PodMetricsList
 	var nmList *v1beta1.NodeMetricsList
 
@@ -49,13 +49,17 @@ func FetchAndPrint(opts Options) {
 		}
 
 		pmList = getPodMetrics(mClientset, opts.Namespace)
-		if opts.Namespace == "" && opts.NamespaceLabels == "" {
-			nmList = getNodeMetrics(mClientset, nodeList, opts.NodeLabels)
+		if opts.Namespace == "" && len(opts.NamespaceLabels) == 0 {
+			nmList = getNodeMetrics(mClientset, nodeList, joinStringSlice(opts.NodeLabels))
 		}
 	}
 
 	cm := buildClusterMetric(podList, pmList, nodeList, nmList)
 	printList(&cm, opts)
+}
+
+func joinStringSlice(s []string) string {
+	return strings.Join(s, ",")
 }
 
 func getPodsAndNodes(clientset kubernetes.Interface, excludeTainted bool, podLabels, nodeLabels, nodeTaints, namespaceLabels, namespace string) (*corev1.PodList, *corev1.NodeList) {
